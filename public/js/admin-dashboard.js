@@ -239,6 +239,11 @@ function switchTab(tab) {
     if (tab === 'sesi') {
         loadSessions();
     }
+    
+    // Initialize monitoring if switching to monitoring tab
+    if (tab === 'monitoring') {
+        refreshMonitoring();
+    }
 }
 
 // Load sessions
@@ -331,6 +336,9 @@ function displaySessions() {
                         📱 Lihat QR Code
                     </button>
                     ${actionButtons}
+                    <button class="btn btn-outline btn-sm" onclick="deleteSession('${session.id}')" style="margin-left: auto; color: var(--danger-color); border-color: var(--danger-color);">
+                        🗑️ Hapus
+                    </button>
                 </div>
             </div>
         `;
@@ -721,3 +729,222 @@ window.onclick = function(event) {
 }
 
 console.log('✓ Admin dashboard loaded');
+
+
+// Delete session
+async function deleteSession(sessionId) {
+    const session = allSessions.find(s => s.id === sessionId);
+    
+    if (!session) {
+        alert('Sesi tidak ditemukan');
+        return;
+    }
+    
+    // Confirm deletion
+    const confirmMsg = `Apakah Anda yakin ingin menghapus sesi "${session.nama_kegiatan}"?\n\nSemua data absensi untuk sesi ini juga akan terhapus.`;
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    try {
+        // Delete session (attendances will be deleted automatically due to CASCADE)
+        const { error } = await supabase
+            .from('attendance_sessions')
+            .delete()
+            .eq('id', sessionId);
+        
+        if (error) throw error;
+        
+        alert('Sesi berhasil dihapus!');
+        
+        // Reload sessions
+        await loadSessions();
+        
+    } catch (error) {
+        console.error('Delete session error:', error);
+        alert('Gagal menghapus sesi: ' + error.message);
+    }
+}
+
+
+// Refresh monitoring
+async function refreshMonitoring() {
+    // Reload sessions for dropdown
+    await loadSessions();
+    
+    // Populate session filter
+    const filter = document.getElementById('monitoringSessionFilter');
+    filter.innerHTML = '<option value="">-- Pilih Sesi --</option>';
+    
+    allSessions.forEach(session => {
+        const option = document.createElement('option');
+        option.value = session.id;
+        option.textContent = `${session.nama_kegiatan} - Hari ke-${session.hari_ke} (${session.status})`;
+        filter.appendChild(option);
+    });
+    
+    // If a session was previously selected, load its data
+    if (filter.value) {
+        await loadMonitoringData();
+    }
+}
+
+// Load monitoring data
+async function loadMonitoringData() {
+    const sessionId = document.getElementById('monitoringSessionFilter').value;
+    
+    if (!sessionId) {
+        document.getElementById('monitoringStats').innerHTML = '';
+        document.getElementById('monitoringTableContainer').innerHTML = `
+            <p style="text-align: center; color: var(--gray-500); padding: var(--spacing-2xl);">
+                Pilih sesi untuk melihat data absensi
+            </p>
+        `;
+        return;
+    }
+    
+    try {
+        // Get session info
+        const session = allSessions.find(s => s.id === sessionId);
+        
+        // Get attendance data with student info
+        const { data: attendances, error } = await supabase
+            .from('attendances')
+            .select(`
+                id,
+                status,
+                scan_time,
+                students (
+                    nim,
+                    nama_lengkap,
+                    faculties:fakultas_id (nama),
+                    study_programs:prodi_id (nama)
+                )
+            `)
+            .eq('session_id', sessionId)
+            .order('scan_time', { ascending: false });
+        
+        if (error) throw error;
+        
+        // Get total active students
+        const { count: totalStudents, error: countError } = await supabase
+            .from('students')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'ACTIVE');
+        
+        if (countError) throw countError;
+        
+        // Calculate stats
+        const totalHadir = attendances.filter(a => a.status === 'HADIR').length;
+        const totalAlpha = attendances.filter(a => a.status === 'ALPHA').length;
+        const belumAbsen = totalStudents - attendances.length;
+        const persentaseHadir = totalStudents > 0 ? ((totalHadir / totalStudents) * 100).toFixed(1) : 0;
+        
+        // Display stats
+        displayMonitoringStats({
+            total: totalStudents,
+            hadir: totalHadir,
+            alpha: totalAlpha,
+            belumAbsen: belumAbsen,
+            persentase: persentaseHadir
+        });
+        
+        // Display table
+        displayMonitoringTable(attendances);
+        
+    } catch (error) {
+        console.error('Load monitoring data error:', error);
+        alert('Gagal memuat data monitoring: ' + error.message);
+    }
+}
+
+// Display monitoring stats
+function displayMonitoringStats(stats) {
+    const container = document.getElementById('monitoringStats');
+    
+    container.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-label">Total Mahasiswa</div>
+            <div class="stat-value">${stats.total}</div>
+        </div>
+        
+        <div class="stat-card" style="background-color: var(--success-color); color: white;">
+            <div class="stat-label">Hadir</div>
+            <div class="stat-value">${stats.hadir}</div>
+            <div class="stat-label">${stats.persentase}%</div>
+        </div>
+        
+        <div class="stat-card" style="background-color: var(--danger-color); color: white;">
+            <div class="stat-label">Alpha</div>
+            <div class="stat-value">${stats.alpha}</div>
+        </div>
+        
+        <div class="stat-card" style="background-color: var(--warning-color); color: white;">
+            <div class="stat-label">Belum Absen</div>
+            <div class="stat-value">${stats.belumAbsen}</div>
+        </div>
+    `;
+}
+
+// Display monitoring table
+function displayMonitoringTable(attendances) {
+    const container = document.getElementById('monitoringTableContainer');
+    
+    if (attendances.length === 0) {
+        container.innerHTML = `
+            <p style="text-align: center; color: var(--gray-500); padding: var(--spacing-2xl);">
+                Belum ada data absensi untuk sesi ini
+            </p>
+        `;
+        return;
+    }
+    
+    const table = `
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>NIM</th>
+                        <th>Nama</th>
+                        <th>Fakultas</th>
+                        <th>Prodi</th>
+                        <th>Status</th>
+                        <th>Waktu Scan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${attendances.map(att => `
+                        <tr>
+                            <td>${att.students.nim}</td>
+                            <td>${att.students.nama_lengkap}</td>
+                            <td>${att.students.faculties?.nama || '-'}</td>
+                            <td>${att.students.study_programs?.nama || '-'}</td>
+                            <td>
+                                <span class="badge badge-${att.status === 'HADIR' ? 'success' : 'danger'}">
+                                    ${att.status}
+                                </span>
+                            </td>
+                            <td>${formatDateTime(att.scan_time)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = table;
+}
+
+// Format date time for display
+function formatDateTime(dateTimeString) {
+    const date = new Date(dateTimeString);
+    const options = { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
+    return date.toLocaleDateString('id-ID', options);
+}

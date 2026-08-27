@@ -372,8 +372,41 @@
                 
                 <!-- Tab: Monitoring -->
                 <div id="tabMonitoring" class="tab-content">
-                    <h2>Monitoring</h2>
-                    <p>Coming soon in next task...</p>
+                    <div class="dashboard-header">
+                        <h2>Monitoring Absensi Real-time</h2>
+                        <button class="btn btn-primary" onclick="refreshMonitoring()">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                    
+                    <!-- Session Filter -->
+                    <div class="card" style="margin-bottom: var(--spacing-lg);">
+                        <div class="card-body">
+                            <div class="form-group" style="margin: 0;">
+                                <label for="monitoringSessionFilter" class="form-label">Pilih Sesi:</label>
+                                <select id="monitoringSessionFilter" class="form-select" onchange="loadMonitoringData()">
+                                    <option value="">-- Pilih Sesi --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Cards -->
+                    <div id="monitoringStats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-lg); margin-bottom: var(--spacing-lg);"></div>
+                    
+                    <!-- Attendance Table -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Daftar Absensi</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="monitoringTableContainer">
+                                <p style="text-align: center; color: var(--gray-500); padding: var(--spacing-2xl);">
+                                    Pilih sesi untuk melihat data absensi
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Tab: Laporan -->
