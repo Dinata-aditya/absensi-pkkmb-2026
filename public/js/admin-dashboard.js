@@ -1243,3 +1243,55 @@ async function updateSession() {
         spinner.style.display = 'none';
     }
 }
+
+
+// ====================================
+// DOWNLOAD QR CODE FUNCTION
+// ====================================
+
+// Download QR Code as PNG
+function downloadQR() {
+    if (!currentSession) {
+        alert('QR Code tidak tersedia');
+        return;
+    }
+    
+    try {
+        // Get the QR code canvas or img element
+        const qrContainer = document.getElementById('qrCodeContainer');
+        const canvas = qrContainer.querySelector('canvas');
+        const img = qrContainer.querySelector('img');
+        
+        let imageUrl;
+        
+        if (canvas) {
+            // If QRCode.js created a canvas, use it directly
+            imageUrl = canvas.toDataURL('image/png');
+        } else if (img) {
+            // If QRCode.js created an img element
+            imageUrl = img.src;
+        } else {
+            alert('QR Code belum di-generate');
+            return;
+        }
+        
+        // Create download link
+        const link = document.createElement('a');
+        const filename = `QR_${currentSession.nama_kegiatan.replace(/\s/g, '_')}_Hari${currentSession.hari_ke}.png`;
+        
+        link.href = imageUrl;
+        link.download = filename;
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show success message
+        alert(`✅ QR Code berhasil diunduh sebagai ${filename}`);
+        
+    } catch (error) {
+        console.error('Download QR error:', error);
+        alert('Gagal mengunduh QR Code: ' + error.message);
+    }
+}
