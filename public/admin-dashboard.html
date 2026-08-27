@@ -411,8 +411,48 @@
                 
                 <!-- Tab: Laporan -->
                 <div id="tabLaporan" class="tab-content">
-                    <h2>Laporan</h2>
-                    <p>Coming soon in next task...</p>
+                    <div class="dashboard-header">
+                        <h2>Laporan Absensi</h2>
+                    </div>
+                    
+                    <!-- Export Options -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Export Data Absensi</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="laporanSessionFilter" class="form-label">Pilih Sesi:</label>
+                                <select id="laporanSessionFilter" class="form-select">
+                                    <option value="">-- Pilih Sesi --</option>
+                                    <option value="all">Semua Sesi (Gabungan)</option>
+                                </select>
+                            </div>
+                            
+                            <div style="display: flex; gap: var(--spacing-md); margin-top: var(--spacing-lg);">
+                                <button class="btn btn-primary" onclick="exportToExcel()" id="btnExportExcel">
+                                    📊 Export ke Excel
+                                </button>
+                                <button class="btn btn-outline" onclick="exportToCSV()" id="btnExportCSV">
+                                    📄 Export ke CSV
+                                </button>
+                            </div>
+                            
+                            <div id="exportInfo" style="margin-top: var(--spacing-md); color: var(--gray-600); font-size: var(--font-size-sm);">
+                                <p>Pilih sesi terlebih dahulu untuk export data absensi.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Preview Data -->
+                    <div class="card" id="previewCard" style="display: none;">
+                        <div class="card-header">
+                            <h3 class="card-title">Preview Data</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="previewTableContainer"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -527,6 +567,9 @@
     
     <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     
     <!-- Config & Auth -->
     <script src="js/config.js"></script>

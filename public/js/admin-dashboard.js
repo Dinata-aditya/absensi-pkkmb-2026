@@ -244,6 +244,13 @@ function switchTab(tab) {
     if (tab === 'monitoring') {
         refreshMonitoring();
     }
+    
+    // Initialize laporan if switching to laporan tab
+    if (tab === 'laporan') {
+        loadSessions().then(() => {
+            initLaporanTab();
+        });
+    }
 }
 
 // Load sessions
@@ -947,4 +954,205 @@ function formatDateTime(dateTimeString) {
         minute: '2-digit'
     };
     return date.toLocaleDateString('id-ID', options);
+}
+
+
+// ====================================
+// LAPORAN / EXPORT FUNCTIONS
+// ====================================
+
+// Initialize laporan tab
+function initLaporanTab() {
+    const filter = document.getElementById('laporanSessionFilter');
+    filter.innerHTML = '<option value="">-- Pilih Sesi --</option><option value="all">Semua Sesi (Gabungan)</option>';
+    
+    allSessions.forEach(session => {
+        const option = document.createElement('option');
+        option.value = session.id;
+        option.textContent = `${session.nama_kegiatan} - Hari ke-${session.hari_ke} (${formatDate(session.tanggal)})`;
+        filter.appendChild(option);
+    });
+}
+
+// Get attendance data for export
+async function getAttendanceDataForExport(sessionId) {
+    try {
+        let query = supabase
+            .from('attendances')
+            .select(`
+                id,
+                status,
+                scan_time,
+                students (
+                    nim,
+                    nama_lengkap,
+                    faculties:fakultas_id (nama),
+                    study_programs:prodi_id (nama)
+                ),
+                attendance_sessions (
+                    nama_kegiatan,
+                    hari_ke,
+                    tanggal
+                )
+            `)
+            .order('scan_time', { ascending: true });
+        
+        // Filter by session if not "all"
+        if (sessionId && sessionId !== 'all') {
+            query = query.eq('session_id', sessionId);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) throw error;
+        
+        return data || [];
+        
+    } catch (error) {
+        console.error('Get attendance data error:', error);
+        throw error;
+    }
+}
+
+// Export to Excel
+async function exportToExcel() {
+    const sessionId = document.getElementById('laporanSessionFilter').value;
+    
+    if (!sessionId) {
+        alert('Pilih sesi terlebih dahulu');
+        return;
+    }
+    
+    const btn = document.getElementById('btnExportExcel');
+    btn.disabled = true;
+    btn.textContent = '⏳ Mengunduh...';
+    
+    try {
+        // Get data
+        const attendances = await getAttendanceDataForExport(sessionId);
+        
+        if (attendances.length === 0) {
+            alert('Tidak ada data absensi untuk sesi ini');
+            return;
+        }
+        
+        // Prepare data for Excel
+        const excelData = attendances.map((att, index) => ({
+            'No': index + 1,
+            'NIM': att.students.nim,
+            'Nama Lengkap': att.students.nama_lengkap,
+            'Fakultas': att.students.faculties?.nama || '-',
+            'Program Studi': att.students.study_programs?.nama || '-',
+            'Sesi': att.attendance_sessions.nama_kegiatan,
+            'Hari Ke': att.attendance_sessions.hari_ke,
+            'Tanggal': formatDate(att.attendance_sessions.tanggal),
+            'Status': att.status,
+            'Waktu Scan': formatDateTime(att.scan_time)
+        }));
+        
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        
+        // Set column widths
+        ws['!cols'] = [
+            { wch: 5 },  // No
+            { wch: 12 }, // NIM
+            { wch: 25 }, // Nama
+            { wch: 30 }, // Fakultas
+            { wch: 30 }, // Prodi
+            { wch: 25 }, // Sesi
+            { wch: 10 }, // Hari Ke
+            { wch: 12 }, // Tanggal
+            { wch: 10 }, // Status
+            { wch: 18 }  // Waktu Scan
+        ];
+        
+        XLSX.utils.book_append_sheet(wb, ws, 'Absensi');
+        
+        // Generate filename
+        const sessionName = sessionId === 'all' ? 'Semua_Sesi' : allSessions.find(s => s.id === sessionId)?.nama_kegiatan.replace(/\s/g, '_') || 'Absensi';
+        const filename = `Laporan_Absensi_${sessionName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+        
+        // Download
+        XLSX.writeFile(wb, filename);
+        
+        document.getElementById('exportInfo').innerHTML = `<p style="color: var(--success-color);">✅ Berhasil export ${attendances.length} data ke Excel!</p>`;
+        
+    } catch (error) {
+        console.error('Export Excel error:', error);
+        alert('Gagal export ke Excel: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '📊 Export ke Excel';
+    }
+}
+
+// Export to CSV
+async function exportToCSV() {
+    const sessionId = document.getElementById('laporanSessionFilter').value;
+    
+    if (!sessionId) {
+        alert('Pilih sesi terlebih dahulu');
+        return;
+    }
+    
+    const btn = document.getElementById('btnExportCSV');
+    btn.disabled = true;
+    btn.textContent = '⏳ Mengunduh...';
+    
+    try {
+        // Get data
+        const attendances = await getAttendanceDataForExport(sessionId);
+        
+        if (attendances.length === 0) {
+            alert('Tidak ada data absensi untuk sesi ini');
+            return;
+        }
+        
+        // Prepare CSV content
+        const headers = ['No', 'NIM', 'Nama Lengkap', 'Fakultas', 'Program Studi', 'Sesi', 'Hari Ke', 'Tanggal', 'Status', 'Waktu Scan'];
+        const rows = attendances.map((att, index) => [
+            index + 1,
+            att.students.nim,
+            att.students.nama_lengkap,
+            att.students.faculties?.nama || '-',
+            att.students.study_programs?.nama || '-',
+            att.attendance_sessions.nama_kegiatan,
+            att.attendance_sessions.hari_ke,
+            formatDate(att.attendance_sessions.tanggal),
+            att.status,
+            formatDateTime(att.scan_time)
+        ]);
+        
+        // Create CSV string
+        let csvContent = headers.join(',') + '\n';
+        rows.forEach(row => {
+            csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
+        });
+        
+        // Create blob and download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        const sessionName = sessionId === 'all' ? 'Semua_Sesi' : allSessions.find(s => s.id === sessionId)?.nama_kegiatan.replace(/\s/g, '_') || 'Absensi';
+        const filename = `Laporan_Absensi_${sessionName}_${new Date().toISOString().split('T')[0]}.csv`;
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        document.getElementById('exportInfo').innerHTML = `<p style="color: var(--success-color);">✅ Berhasil export ${attendances.length} data ke CSV!</p>`;
+        
+    } catch (error) {
+        console.error('Export CSV error:', error);
+        alert('Gagal export ke CSV: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '📄 Export ke CSV';
+    }
 }
