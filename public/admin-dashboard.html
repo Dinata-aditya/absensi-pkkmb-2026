@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dashboard Admin PKKMB 2026">
+    <title>Dashboard Admin - PKKMB 2026</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        .admin-dashboard {
+            min-height: 100vh;
+            background-color: var(--gray-50);
+        }
+        
+        .admin-navbar {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: var(--spacing-md) 0;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .admin-navbar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .admin-brand {
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+        }
+        
+        .admin-nav-tabs {
+            display: flex;
+            gap: var(--spacing-md);
+            background-color: var(--white);
+            padding: 0 var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            overflow-x: auto;
+        }
+        
+        .admin-nav-tab {
+            padding: var(--spacing-md) var(--spacing-lg);
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--gray-600);
+            border-bottom: 3px solid transparent;
+            transition: all var(--transition-fast);
+            white-space: nowrap;
+        }
+        
+        .admin-nav-tab:hover {
+            color: var(--primary-color);
+        }
+        
+        .admin-nav-tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .admin-content {
+            padding: var(--spacing-xl) 0;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .stat-card {
+            background: var(--white);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .stat-value {
+            font-size: var(--font-size-3xl);
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            color: var(--gray-600);
+            font-size: var(--font-size-sm);
+            margin-top: var(--spacing-xs);
+        }
+        
+        .filter-bar {
+            background: var(--white);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+        
+        .filter-item {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .table-container {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .table th {
+            background-color: var(--gray-100);
+            padding: var(--spacing-md);
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-700);
+            border-bottom: 2px solid var(--gray-300);
+        }
+        
+        .table td {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid var(--gray-200);
+        }
+        
+        .table tr:hover {
+            background-color: var(--gray-50);
+        }
+        
+        .table-actions {
+            display: flex;
+            gap: var(--spacing-xs);
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: var(--font-size-xl);
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: var(--font-size-2xl);
+            cursor: pointer;
+            color: var(--gray-600);
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-body {
+            padding: var(--spacing-lg);
+        }
+        
+        .modal-footer {
+            padding: var(--spacing-lg);
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: flex-end;
+        }
+        
+        @media (max-width: 768px) {
+            .filter-bar {
+                flex-direction: column;
+            }
+            
+            .filter-item {
+                min-width: 100%;
+            }
+            
+            .table-container {
+                overflow-x: auto;
+            }
+            
+            .table {
+                min-width: 800px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-dashboard">
+        <!-- Navbar -->
+        <nav class="admin-navbar">
+            <div class="container">
+                <div class="admin-navbar-content">
+                    <div class="admin-brand">Admin PKKMB 2026</div>
+                    <button class="btn btn-sm" style="background-color: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="logout()">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Navigation Tabs -->
+        <div class="admin-nav-tabs">
+            <button class="admin-nav-tab active" onclick="switchTab('mahasiswa')">
+                Kelola Mahasiswa
+            </button>
+            <button class="admin-nav-tab" onclick="switchTab('sesi')">
+                Sesi Absensi
+            </button>
+            <button class="admin-nav-tab" onclick="switchTab('monitoring')">
+                Monitoring
+            </button>
+            <button class="admin-nav-tab" onclick="switchTab('laporan')">
+                Laporan
+            </button>
+        </div>
+        
+        <!-- Main Content -->
+        <main class="admin-content">
+            <div class="container">
+                <!-- Loading State -->
+                <div id="loadingState" style="text-align: center; padding: var(--spacing-2xl);">
+                    <div class="spinner spinner-primary" style="width: 40px; height: 40px;"></div>
+                    <p style="margin-top: var(--spacing-md); color: var(--gray-600);">Memuat data...</p>
+                </div>
+                
+                <!-- Tab: Kelola Mahasiswa -->
+                <div id="tabMahasiswa" class="tab-content">
+                    <!-- Stats -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="statTotal">0</div>
+                            <div class="stat-label">Total Mahasiswa</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statPending">0</div>
+                            <div class="stat-label">Menunggu Verifikasi</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statActive">0</div>
+                            <div class="stat-label">Aktif</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statInactive">0</div>
+                            <div class="stat-label">Tidak Aktif</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter -->
+                    <div class="filter-bar">
+                        <div class="filter-item">
+                            <select id="filterFakultas" class="form-select" onchange="applyFilters()">
+                                <option value="">Semua Fakultas</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <select id="filterProdi" class="form-select" onchange="applyFilters()">
+                                <option value="">Semua Program Studi</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <select id="filterStatus" class="form-select" onchange="applyFilters()">
+                                <option value="">Semua Status</option>
+                                <option value="PENDING">Pending</option>
+                                <option value="ACTIVE">Active</option>
+                                <option value="NEEDS_REVISION">Needs Revision</option>
+                                <option value="INACTIVE">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="filter-item">
+                            <input 
+                                type="text" 
+                                id="filterSearch" 
+                                class="form-input" 
+                                placeholder="Cari NIM atau Nama..."
+                                oninput="applyFilters()"
+                            >
+                        </div>
+                    </div>
+                    
+                    <!-- Table -->
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>NIM</th>
+                                    <th>Nama</th>
+                                    <th>Fakultas</th>
+                                    <th>Program Studi</th>
+                                    <th>Status</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentsTableBody">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: var(--spacing-xl); color: var(--gray-500);">
+                                        Memuat data...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Tab: Sesi Absensi -->
+                <div id="tabSesi" class="tab-content">
+                    <!-- Create Session Button -->
+                    <div style="margin-bottom: var(--spacing-xl);">
+                        <button class="btn btn-primary btn-lg" onclick="openCreateSessionModal()">
+                            + Buat Sesi Absensi Baru
+                        </button>
+                    </div>
+                    
+                    <!-- Sessions List -->
+                    <div id="sessionsList" class="dashboard-grid" style="grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));">
+                        <!-- Will be populated by JS -->
+                    </div>
+                </div>
+                
+                <!-- Tab: Monitoring -->
+                <div id="tabMonitoring" class="tab-content">
+                    <h2>Monitoring</h2>
+                    <p>Coming soon in next task...</p>
+                </div>
+                
+                <!-- Tab: Laporan -->
+                <div id="tabLaporan" class="tab-content">
+                    <h2>Laporan</h2>
+                    <p>Coming soon in next task...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal: Update Status -->
+    <div id="modalUpdateStatus" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Update Status Mahasiswa</h3>
+                <button class="modal-close" onclick="closeModal('modalUpdateStatus')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalStudentInfo" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); background-color: var(--gray-50); border-radius: var(--radius-md);"></div>
+                
+                <div class="form-group">
+                    <label for="modalStatus" class="form-label required">Status Baru</label>
+                    <select id="modalStatus" class="form-select">
+                        <option value="PENDING">Pending - Menunggu Verifikasi</option>
+                        <option value="ACTIVE">Active - Dapat Absensi</option>
+                        <option value="NEEDS_REVISION">Needs Revision - Perlu Revisi</option>
+                        <option value="INACTIVE">Inactive - Tidak Aktif</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modalUpdateStatus')">Batal</button>
+                <button class="btn btn-primary" onclick="saveStatus()" id="btnSaveStatus">
+                    <span id="saveStatusText">Simpan</span>
+                    <span id="saveStatusSpinner" class="spinner" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal: Create Session -->
+    <div id="modalCreateSession" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Buat Sesi Absensi Baru</h3>
+                <button class="modal-close" onclick="closeModal('modalCreateSession')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formCreateSession">
+                    <div class="form-group">
+                        <label for="sessionName" class="form-label required">Nama Kegiatan</label>
+                        <input type="text" id="sessionName" class="form-input" placeholder="Contoh: PKKMB Hari 1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sessionHari" class="form-label required">Hari Ke</label>
+                        <select id="sessionHari" class="form-select" required>
+                            <option value="">-- Pilih Hari --</option>
+                            <option value="1">Hari 1</option>
+                            <option value="2">Hari 2</option>
+                            <option value="3">Hari 3</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sessionDate" class="form-label required">Tanggal</label>
+                        <input type="date" id="sessionDate" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+                        <div class="form-group">
+                            <label for="sessionStart" class="form-label required">Jam Mulai</label>
+                            <input type="time" id="sessionStart" class="form-input" value="07:00" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="sessionEnd" class="form-label required">Jam Selesai</label>
+                            <input type="time" id="sessionEnd" class="form-input" value="17:00" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modalCreateSession')">Batal</button>
+                <button class="btn btn-primary" onclick="createSession()" id="btnCreateSession">
+                    <span id="createSessionText">Buat Sesi</span>
+                    <span id="createSessionSpinner" class="spinner" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal: QR Code Display -->
+    <div id="modalQRCode" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="qrModalTitle">QR Code Absensi</h3>
+                <button class="modal-close" onclick="closeModal('modalQRCode')">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <div id="qrCodeContainer" style="padding: var(--spacing-xl); background-color: var(--gray-50); border-radius: var(--radius-lg); margin-bottom: var(--spacing-lg);">
+                    <!-- QR Code will be generated here -->
+                </div>
+                <p style="color: var(--gray-600);">Scan QR code ini untuk absensi</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modalQRCode')">Tutup</button>
+                <button class="btn btn-primary" onclick="printQR()">
+                    🖨️ Cetak QR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QRCode.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Config & Auth -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    
+    <!-- Admin Dashboard Logic -->
+    <script src="js/admin-dashboard.js"></script>
+</body>
+</html>

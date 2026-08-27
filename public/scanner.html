@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="QR Scanner Absensi PKKMB 2026">
+    <title>Scan QR - PKKMB 2026</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+        }
+        
+        .scanner-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .scanner-header {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: var(--spacing-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+        
+        .scanner-title {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+        }
+        
+        .scanner-view {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #qr-reader {
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+        
+        .scanner-frame {
+            width: 280px;
+            height: 280px;
+            border: 3px solid var(--primary-color);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+        }
+        
+        .scanner-instruction {
+            margin-top: var(--spacing-xl);
+            color: var(--white);
+            text-align: center;
+            padding: 0 var(--spacing-lg);
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-radius: var(--radius-lg);
+        }
+        
+        .result-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        .result-container.show {
+            display: flex;
+        }
+        
+        .result-card {
+            background: var(--white);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-2xl);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        .result-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto var(--spacing-lg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+        
+        .result-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .result-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .result-title {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .result-message {
+            color: var(--gray-600);
+            margin-bottom: var(--spacing-xl);
+        }
+    </style>
+</head>
+<body>
+    <div class="scanner-container">
+        <!-- Header -->
+        <div class="scanner-header">
+            <div class="scanner-title">Scan QR Absensi</div>
+            <a href="mahasiswa-dashboard.html" class="btn btn-sm" style="background-color: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                Tutup
+            </a>
+        </div>
+        
+        <!-- Scanner View -->
+        <div class="scanner-view">
+            <div id="qr-reader"></div>
+            
+            <div class="scanner-overlay">
+                <div class="scanner-frame"></div>
+                <div class="scanner-instruction">
+                    Arahkan kamera ke QR Code
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Result Display -->
+    <div id="resultContainer" class="result-container">
+        <div class="result-card">
+            <div id="resultIcon" class="result-icon"></div>
+            <h2 id="resultTitle" class="result-title"></h2>
+            <p id="resultMessage" class="result-message"></p>
+            <button class="btn btn-primary btn-lg" onclick="closeResult()">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- HTML5 QR Code Scanner -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    
+    <!-- Config & Auth -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    
+    <!-- Scanner Logic -->
+    <script src="js/scanner.js"></script>
+</body>
+</html>

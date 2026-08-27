@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Login Sistem Absensi PKKMB 2026">
+    <title>Masuk - PKKMB 2026</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-lg);
+        }
+        
+        .login-card {
+            width: 100%;
+            max-width: 450px;
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: var(--spacing-lg) 0;
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--gray-300);
+        }
+        
+        .divider span {
+            padding: 0 var(--spacing-md);
+            color: var(--gray-500);
+            font-size: var(--font-size-sm);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card card">
+            <div class="card-header">
+                <h2 class="card-title text-center">Masuk</h2>
+                <p class="text-center" style="color: var(--gray-600); margin: 0;">
+                    Sistem Absensi PKKMB 2026
+                </p>
+            </div>
+            
+            <div class="card-body">
+                <!-- Alert Container -->
+                <div id="alertContainer"></div>
+                
+                <!-- Login Form -->
+                <form id="loginForm">
+                    <!-- Email -->
+                    <div class="form-group">
+                        <label for="email" class="form-label required">Email</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            class="form-input" 
+                            placeholder="contoh@email.com"
+                            required
+                            autocomplete="email"
+                            autofocus
+                        >
+                        <span class="form-error" id="emailError"></span>
+                    </div>
+                    
+                    <!-- Password -->
+                    <div class="form-group">
+                        <label for="password" class="form-label required">Password</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            class="form-input" 
+                            placeholder="Masukkan password"
+                            required
+                            autocomplete="current-password"
+                        >
+                        <span class="form-error" id="passwordError"></span>
+                    </div>
+                    
+                    <!-- Forgot Password Link -->
+                    <div style="text-align: right; margin-bottom: var(--spacing-lg);">
+                        <a href="reset-password.html" style="font-size: var(--font-size-sm);">
+                            Lupa password?
+                        </a>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary btn-full btn-lg" id="submitBtn">
+                        <span id="submitText">Masuk</span>
+                        <span id="submitSpinner" class="spinner" style="display: none;"></span>
+                    </button>
+                </form>
+                
+                <!-- Divider -->
+                <div class="divider">
+                    <span>atau</span>
+                </div>
+                
+                <!-- Register Link -->
+                <a href="register.html" class="btn btn-outline btn-full btn-lg">
+                    Daftar Akun Baru
+                </a>
+                
+                <!-- Back to Home -->
+                <div class="text-center mt-3">
+                    <a href="index.html" style="font-size: var(--font-size-sm); color: var(--gray-600);">
+                        ← Kembali ke Beranda
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Config & Auth -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    
+    <!-- Login Logic -->
+    <script src="js/login.js"></script>
+</body>
+</html>

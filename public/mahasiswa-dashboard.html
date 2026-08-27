@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dashboard Mahasiswa PKKMB 2026">
+    <title>Dashboard Mahasiswa - PKKMB 2026</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        .dashboard-container {
+            min-height: 100vh;
+            background-color: var(--gray-50);
+        }
+        
+        .navbar {
+            background-color: var(--white);
+            box-shadow: var(--shadow-sm);
+            padding: var(--spacing-md) 0;
+        }
+        
+        .navbar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .navbar-brand {
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .main-content {
+            padding: var(--spacing-xl) 0;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            gap: var(--spacing-lg);
+        }
+        
+        .profile-card {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #059669 100%);
+            color: var(--white);
+            padding: var(--spacing-xl);
+            border-radius: var(--radius-lg);
+        }
+        
+        .profile-card h3 {
+            margin: 0 0 var(--spacing-sm) 0;
+            color: var(--white);
+        }
+        
+        .profile-info {
+            display: grid;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-lg);
+        }
+        
+        .profile-info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: var(--spacing-sm) 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .profile-info-label {
+            opacity: 0.9;
+        }
+        
+        .profile-info-value {
+            font-weight: 600;
+        }
+        
+        .status-section {
+            text-align: center;
+            padding: var(--spacing-xl);
+        }
+        
+        .status-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto var(--spacing-md);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+        }
+        
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-active {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-inactive {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .scan-section {
+            text-align: center;
+            padding: var(--spacing-xl);
+        }
+        
+        .scan-button {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto var(--spacing-lg);
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #059669 100%);
+            color: var(--white);
+            border: none;
+            cursor: pointer;
+            font-size: var(--font-size-3xl);
+            box-shadow: var(--shadow-xl);
+            transition: all var(--transition-base);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .scan-button:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.3);
+        }
+        
+        .scan-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .scan-button-text {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+        }
+        
+        .attendance-history {
+            display: grid;
+            gap: var(--spacing-md);
+        }
+        
+        .attendance-day-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .day-number {
+            width: 60px;
+            height: 60px;
+            border-radius: var(--radius-lg);
+            background-color: var(--gray-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--gray-700);
+        }
+        
+        .day-info {
+            flex: 1;
+        }
+        
+        .day-title {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .day-date {
+            color: var(--gray-600);
+            font-size: var(--font-size-sm);
+        }
+        
+        @media (max-width: 768px) {
+            .scan-button {
+                width: 160px;
+                height: 160px;
+                font-size: var(--font-size-2xl);
+            }
+            
+            .scan-button-text {
+                font-size: var(--font-size-base);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="container">
+                <div class="navbar-content">
+                    <div class="navbar-brand">PKKMB 2026</div>
+                    <button class="btn btn-secondary btn-sm" onclick="logout()">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Loading State -->
+                <div id="loadingState" style="text-align: center; padding: var(--spacing-2xl);">
+                    <div class="spinner spinner-primary" style="width: 40px; height: 40px;"></div>
+                    <p style="margin-top: var(--spacing-md); color: var(--gray-600);">Memuat data...</p>
+                </div>
+                
+                <!-- Dashboard Content -->
+                <div id="dashboardContent" style="display: none;">
+                    <div class="dashboard-grid">
+                        <!-- Profile Card -->
+                        <div class="profile-card">
+                            <h3>Selamat Datang,</h3>
+                            <h2 id="studentName" style="margin: 0; color: var(--white);">-</h2>
+                            
+                            <div class="profile-info">
+                                <div class="profile-info-item">
+                                    <span class="profile-info-label">NIM</span>
+                                    <span class="profile-info-value" id="studentNim">-</span>
+                                </div>
+                                <div class="profile-info-item">
+                                    <span class="profile-info-label">Fakultas</span>
+                                    <span class="profile-info-value" id="studentFakultas">-</span>
+                                </div>
+                                <div class="profile-info-item">
+                                    <span class="profile-info-label">Program Studi</span>
+                                    <span class="profile-info-value" id="studentProdi">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Status Card -->
+                        <div class="card">
+                            <div class="card-body status-section" id="statusSection">
+                                <!-- Will be populated by JS -->
+                            </div>
+                        </div>
+                        
+                        <!-- Scan QR Section (only if ACTIVE) -->
+                        <div class="card" id="scanSection" style="display: none;">
+                            <div class="card-body scan-section">
+                                <h3>Scan QR Code Absensi</h3>
+                                <p style="color: var(--gray-600); margin-bottom: var(--spacing-lg);">
+                                    Tekan tombol di bawah untuk membuka scanner
+                                </p>
+                                
+                                <button class="scan-button" onclick="openScanner()">
+                                    <span style="font-size: 4rem;">📷</span>
+                                    <span class="scan-button-text">SCAN QR</span>
+                                </button>
+                                
+                                <p style="color: var(--gray-500); font-size: var(--font-size-sm);">
+                                    Arahkan kamera ke QR Code yang tertera di lokasi
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <!-- Attendance History -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Riwayat Absensi</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="attendance-history" id="attendanceHistory">
+                                    <!-- Will be populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- HTML5 QR Code Scanner -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    
+    <!-- Config & Auth -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    
+    <!-- Dashboard Logic -->
+    <script src="js/mahasiswa-dashboard.js"></script>
+</body>
+</html>

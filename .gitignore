@@ -1,0 +1,23 @@
+# Credentials dan sensitive files
+docs/ADMIN_CREDENTIALS.md
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies (jika pakai npm nanti)
+node_modules/
+
+# Build files
+dist/
+build/
