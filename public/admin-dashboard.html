@@ -252,6 +252,28 @@
             </div>
         </nav>
         
+        <!-- Statistics Dashboard -->
+        <div class="admin-content" style="padding-top: var(--spacing-lg);">
+            <div class="container">
+                <div class="card" style="margin-bottom: var(--spacing-lg);">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="card-title">📊 Statistik Kehadiran PKKMB 2026</h3>
+                        <button class="btn btn-sm btn-outline" onclick="refreshStatistics()">
+                            🔄 Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Overall Stats -->
+                        <div id="overallStats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);"></div>
+                        
+                        <!-- Per Day Stats -->
+                        <h4 style="margin-bottom: var(--spacing-md); color: var(--primary-color);">Kehadiran Per Hari</h4>
+                        <div id="perDayStats"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Navigation Tabs -->
         <div class="admin-nav-tabs">
             <button class="admin-nav-tab active" onclick="switchTab('mahasiswa')">

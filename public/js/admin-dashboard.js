@@ -44,6 +44,12 @@ async function loadDashboard() {
         // Load students
         await loadStudents();
         
+        // Load sessions for statistics
+        await loadSessions();
+        
+        // Load statistics
+        await loadStatistics();
+        
         // Populate filter dropdowns
         populateFilters();
         
@@ -1294,4 +1300,187 @@ function downloadQR() {
         console.error('Download QR error:', error);
         alert('Gagal mengunduh QR Code: ' + error.message);
     }
+}
+
+
+// ====================================
+// STATISTICS DASHBOARD FUNCTIONS
+// ====================================
+
+// Load and display statistics
+async function loadStatistics() {
+    try {
+        // Get total active students
+        const { count: totalStudents, error: countError } = await supabase
+            .from('students')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'ACTIVE');
+        
+        if (countError) throw countError;
+        
+        // Get all sessions
+        const { data: sessions, error: sessionsError } = await supabase
+            .from('attendance_sessions')
+            .select('*')
+            .order('hari_ke');
+        
+        if (sessionsError) throw sessionsError;
+        
+        // Get all attendances
+        const { data: attendances, error: attendancesError } = await supabase
+            .from('attendances')
+            .select('session_id, status');
+        
+        if (attendancesError) throw attendancesError;
+        
+        // Calculate overall stats
+        const totalSessions = sessions.length;
+        const totalAttendances = attendances.length;
+        const totalHadir = attendances.filter(a => a.status === 'HADIR').length;
+        const totalAlpha = attendances.filter(a => a.status === 'ALPHA').length;
+        const averageAttendance = totalSessions > 0 ? ((totalHadir / (totalStudents * totalSessions)) * 100).toFixed(1) : 0;
+        
+        // Display overall stats
+        displayOverallStats({
+            totalStudents,
+            totalSessions,
+            totalHadir,
+            totalAlpha,
+            averageAttendance
+        });
+        
+        // Calculate per-day stats
+        const perDayData = [];
+        
+        // Group sessions by hari_ke
+        const sessionsByDay = {};
+        sessions.forEach(session => {
+            if (!sessionsByDay[session.hari_ke]) {
+                sessionsByDay[session.hari_ke] = [];
+            }
+            sessionsByDay[session.hari_ke].push(session);
+        });
+        
+        // Calculate stats for each day
+        for (const [hariKe, daySessions] of Object.entries(sessionsByDay)) {
+            const sessionIds = daySessions.map(s => s.id);
+            const dayAttendances = attendances.filter(a => sessionIds.includes(a.session_id));
+            const dayHadir = dayAttendances.filter(a => a.status === 'HADIR').length;
+            const dayAlpha = dayAttendances.filter(a => a.status === 'ALPHA').length;
+            const dayPercentage = totalStudents > 0 ? ((dayHadir / totalStudents) * 100).toFixed(1) : 0;
+            
+            perDayData.push({
+                hariKe: parseInt(hariKe),
+                sessions: daySessions,
+                totalAbsensi: dayAttendances.length,
+                hadir: dayHadir,
+                alpha: dayAlpha,
+                percentage: dayPercentage
+            });
+        }
+        
+        // Sort by hari_ke
+        perDayData.sort((a, b) => a.hariKe - b.hariKe);
+        
+        // Display per-day stats
+        displayPerDayStats(perDayData, totalStudents);
+        
+    } catch (error) {
+        console.error('Load statistics error:', error);
+        document.getElementById('overallStats').innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; color: var(--danger-color);">
+                Gagal memuat statistik: ${error.message}
+            </div>
+        `;
+    }
+}
+
+// Display overall statistics
+function displayOverallStats(stats) {
+    const container = document.getElementById('overallStats');
+    
+    container.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-label">Total Mahasiswa</div>
+            <div class="stat-value">${stats.totalStudents}</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Total Sesi</div>
+            <div class="stat-value">${stats.totalSessions}</div>
+        </div>
+        
+        <div class="stat-card" style="background-color: var(--success-color); color: white;">
+            <div class="stat-label">Total Hadir</div>
+            <div class="stat-value">${stats.totalHadir}</div>
+        </div>
+        
+        <div class="stat-card" style="background-color: var(--danger-color); color: white;">
+            <div class="stat-label">Total Alpha</div>
+            <div class="stat-value">${stats.totalAlpha}</div>
+        </div>
+        
+        <div class="stat-card" style="background-color: var(--primary-color); color: white;">
+            <div class="stat-label">Rata-rata Kehadiran</div>
+            <div class="stat-value">${stats.averageAttendance}%</div>
+        </div>
+    `;
+}
+
+// Display per-day statistics
+function displayPerDayStats(perDayData, totalStudents) {
+    const container = document.getElementById('perDayStats');
+    
+    if (perDayData.length === 0) {
+        container.innerHTML = `
+            <p style="text-align: center; color: var(--gray-500); padding: var(--spacing-lg);">
+                Belum ada data kehadiran
+            </p>
+        `;
+        return;
+    }
+    
+    const statsHtml = perDayData.map(day => `
+        <div class="card" style="margin-bottom: var(--spacing-md);">
+            <div class="card-header" style="background-color: var(--gray-50);">
+                <h4 style="margin: 0; color: var(--primary-color);">Hari Ke-${day.hariKe}</h4>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
+                    <div>
+                        <div style="font-size: var(--font-size-sm); color: var(--gray-600);">Jumlah Sesi</div>
+                        <div style="font-size: var(--font-size-xl); font-weight: 600;">${day.sessions.length}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: var(--font-size-sm); color: var(--gray-600);">Total Absensi</div>
+                        <div style="font-size: var(--font-size-xl); font-weight: 600;">${day.totalAbsensi}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: var(--font-size-sm); color: var(--gray-600);">Hadir</div>
+                        <div style="font-size: var(--font-size-xl); font-weight: 600; color: var(--success-color);">${day.hadir}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: var(--font-size-sm); color: var(--gray-600);">Alpha</div>
+                        <div style="font-size: var(--font-size-xl); font-weight: 600; color: var(--danger-color);">${day.alpha}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: var(--font-size-sm); color: var(--gray-600);">Persentase Hadir</div>
+                        <div style="font-size: var(--font-size-xl); font-weight: 600; color: var(--primary-color);">${day.percentage}%</div>
+                    </div>
+                </div>
+                
+                <div style="font-size: var(--font-size-sm); color: var(--gray-600);">
+                    <strong>Sesi:</strong> ${day.sessions.map(s => s.nama_kegiatan).join(', ')}
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    container.innerHTML = statsHtml;
+}
+
+// Refresh statistics
+async function refreshStatistics() {
+    await loadSessions();
+    await loadStatistics();
 }
