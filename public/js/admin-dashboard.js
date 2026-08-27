@@ -927,6 +927,7 @@ function displayMonitoringTable(attendances) {
                         <th>Prodi</th>
                         <th>Status</th>
                         <th>Waktu Scan</th>
+                        <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -942,6 +943,12 @@ function displayMonitoringTable(attendances) {
                                 </span>
                             </td>
                             <td>${formatDateTime(att.scan_time)}</td>
+                            <td>
+                                ${att.status === 'HADIR' 
+                                    ? `<button class="btn btn-sm btn-outline" onclick="changeAttendanceStatus('${att.id}', 'ALPHA')" style="color: var(--danger-color); border-color: var(--danger-color);">Set Alpha</button>`
+                                    : `<button class="btn btn-sm btn-outline" onclick="changeAttendanceStatus('${att.id}', 'HADIR')" style="color: var(--success-color); border-color: var(--success-color);">Set Hadir</button>`
+                                }
+                            </td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -1483,4 +1490,44 @@ function displayPerDayStats(perDayData, totalStudents) {
 async function refreshStatistics() {
     await loadSessions();
     await loadStatistics();
+}
+
+
+// ====================================
+// MANUAL ATTENDANCE OVERRIDE
+// ====================================
+
+// Change attendance status manually
+async function changeAttendanceStatus(attendanceId, newStatus) {
+    const statusText = newStatus === 'HADIR' ? 'HADIR' : 'ALPHA';
+    const confirmMsg = `Apakah Anda yakin ingin mengubah status absensi menjadi ${statusText}?\n\nPerubahan ini akan langsung tersimpan di database.`;
+    
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+    
+    try {
+        // Update attendance status
+        const { error } = await supabase
+            .from('attendances')
+            .update({ 
+                status: newStatus,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', attendanceId);
+        
+        if (error) throw error;
+        
+        alert(`✅ Status berhasil diubah menjadi ${statusText}`);
+        
+        // Reload monitoring data
+        await loadMonitoringData();
+        
+        // Refresh statistics
+        await loadStatistics();
+        
+    } catch (error) {
+        console.error('Change attendance status error:', error);
+        alert('Gagal mengubah status: ' + error.message);
+    }
 }
