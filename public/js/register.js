@@ -253,7 +253,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
                 nama_lengkap: namaLengkap,
                 fakultas_id: fakultasId,
                 prodi_id: prodiId,
-                status: 'PENDING'
+                status: 'ACTIVE'
             });
         
         if (studentError) {
@@ -268,7 +268,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
         }
         
         // Success!
-        showAlert('Registrasi berhasil! Akun Anda akan diverifikasi oleh admin. Silakan login.', 'success');
+        showAlert('Registrasi berhasil! Anda sudah bisa login dan melakukan absensi.', 'success');
         
         // Redirect to login after 2 seconds
         setTimeout(() => {
