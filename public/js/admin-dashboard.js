@@ -343,6 +343,9 @@ function displaySessions() {
                         📱 Lihat QR Code
                     </button>
                     ${actionButtons}
+                    <button class="btn btn-outline btn-sm" onclick="openEditSessionModal('${session.id}')">
+                        ✏️ Edit
+                    </button>
                     <button class="btn btn-outline btn-sm" onclick="deleteSession('${session.id}')" style="margin-left: auto; color: var(--danger-color); border-color: var(--danger-color);">
                         🗑️ Hapus
                     </button>
@@ -1154,5 +1157,89 @@ async function exportToCSV() {
     } finally {
         btn.disabled = false;
         btn.textContent = '📄 Export ke CSV';
+    }
+}
+
+
+// ====================================
+// EDIT SESSION FUNCTIONS
+// ====================================
+
+// Open edit session modal
+function openEditSessionModal(sessionId) {
+    const session = allSessions.find(s => s.id === sessionId);
+    
+    if (!session) {
+        alert('Sesi tidak ditemukan');
+        return;
+    }
+    
+    // Populate form
+    document.getElementById('editSessionId').value = session.id;
+    document.getElementById('editSessionName').value = session.nama_kegiatan;
+    document.getElementById('editSessionHari').value = session.hari_ke;
+    document.getElementById('editSessionDate').value = session.tanggal;
+    document.getElementById('editSessionStart').value = session.jam_mulai;
+    document.getElementById('editSessionEnd').value = session.jam_selesai;
+    
+    // Show modal
+    document.getElementById('modalEditSession').classList.add('active');
+}
+
+// Update session
+async function updateSession() {
+    const form = document.getElementById('formEditSession');
+    
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const sessionId = document.getElementById('editSessionId').value;
+    const name = document.getElementById('editSessionName').value.trim();
+    const hari = parseInt(document.getElementById('editSessionHari').value);
+    const date = document.getElementById('editSessionDate').value;
+    const start = document.getElementById('editSessionStart').value;
+    const end = document.getElementById('editSessionEnd').value;
+    
+    // Show loading
+    const btn = document.getElementById('btnUpdateSession');
+    const text = document.getElementById('updateSessionText');
+    const spinner = document.getElementById('updateSessionSpinner');
+    
+    btn.disabled = true;
+    text.style.display = 'none';
+    spinner.style.display = 'inline-block';
+    
+    try {
+        // Update session
+        const { error } = await supabase
+            .from('attendance_sessions')
+            .update({
+                nama_kegiatan: name,
+                hari_ke: hari,
+                tanggal: date,
+                jam_mulai: start,
+                jam_selesai: end
+            })
+            .eq('id', sessionId);
+        
+        if (error) throw error;
+        
+        alert('Sesi berhasil diupdate!');
+        
+        // Close modal
+        closeModal('modalEditSession');
+        
+        // Reload sessions
+        await loadSessions();
+        
+    } catch (error) {
+        console.error('Update session error:', error);
+        alert('Gagal update sesi: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        text.style.display = 'inline';
+        spinner.style.display = 'none';
     }
 }

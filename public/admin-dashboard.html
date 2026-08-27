@@ -540,6 +540,55 @@
         </div>
     </div>
     
+    <!-- Modal: Edit Session -->
+    <div id="modalEditSession" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Sesi Absensi</h3>
+                <button class="modal-close" onclick="closeModal('modalEditSession')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditSession">
+                    <input type="hidden" id="editSessionId">
+                    
+                    <div class="form-group">
+                        <label for="editSessionName" class="form-label required">Nama Kegiatan</label>
+                        <input type="text" id="editSessionName" class="form-input" placeholder="Contoh: PKKMB Hari ke-1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editSessionHari" class="form-label required">Hari Ke</label>
+                        <input type="number" id="editSessionHari" class="form-input" min="1" placeholder="1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editSessionDate" class="form-label required">Tanggal</label>
+                        <input type="date" id="editSessionDate" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editSessionStart" class="form-label required">Jam Mulai</label>
+                            <input type="time" id="editSessionStart" class="form-input" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editSessionEnd" class="form-label required">Jam Selesai</label>
+                            <input type="time" id="editSessionEnd" class="form-input" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modalEditSession')">Batal</button>
+                <button class="btn btn-primary" onclick="updateSession()" id="btnUpdateSession">
+                    <span id="updateSessionText">Simpan Perubahan</span>
+                    <span id="updateSessionSpinner" class="spinner" style="display: none;"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Modal: QR Code Display -->
     <div id="modalQRCode" class="modal">
         <div class="modal-content" style="max-width: 600px;">
