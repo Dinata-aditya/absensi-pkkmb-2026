@@ -3,653 +3,500 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Dashboard Admin PKKMB 2026">
-    <title>Dashboard Admin - PKKMB 2026</title>
-    
-    <!-- CSS -->
+    <title>Admin - PKKMB 2026</title>
     <link rel="stylesheet" href="css/style.css">
-    
     <style>
-        .admin-dashboard {
-            min-height: 100vh;
-            background-color: var(--gray-50);
-        }
-        
-        .admin-navbar {
-            background-color: var(--primary-color);
-            color: var(--white);
-            padding: var(--spacing-md) 0;
-            box-shadow: var(--shadow-md);
-        }
-        
-        .admin-navbar-content {
+        * { box-sizing: border-box; }
+
+        body { background: #f5f5f5; margin: 0; font-family: sans-serif; }
+
+        /* ── Navbar ── */
+        .navbar {
+            background: #10b981;
+            color: #fff;
+            padding: 0 1.5rem;
+            height: 56px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 4px rgba(0,0,0,.15);
         }
-        
-        .admin-brand {
-            font-size: var(--font-size-xl);
-            font-weight: 700;
-        }
-        
-        .admin-nav-tabs {
+        .navbar-brand {
             display: flex;
-            gap: var(--spacing-md);
-            background-color: var(--white);
-            padding: 0 var(--spacing-lg);
-            box-shadow: var(--shadow-sm);
-            overflow-x: auto;
+            align-items: center;
+            gap: .75rem;
+            font-weight: 700;
+            font-size: 1rem;
         }
-        
-        .admin-nav-tab {
-            padding: var(--spacing-md) var(--spacing-lg);
+        .navbar-brand img { height: 32px; width: 32px; object-fit: contain; }
+        .btn-logout {
+            background: rgba(255,255,255,.15);
+            border: 1px solid rgba(255,255,255,.35);
+            color: #fff;
+            padding: .3rem .9rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: .875rem;
+            transition: background .15s;
+        }
+        .btn-logout:hover { background: rgba(255,255,255,.25); }
+
+        /* ── Tabs ── */
+        .tabs {
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            overflow-x: auto;
+            padding: 0 1rem;
+        }
+        .tab-btn {
+            padding: .875rem 1.25rem;
             border: none;
             background: none;
-            cursor: pointer;
+            font-size: .9rem;
             font-weight: 500;
-            color: var(--gray-600);
-            border-bottom: 3px solid transparent;
-            transition: all var(--transition-fast);
+            color: #6b7280;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
             white-space: nowrap;
+            transition: color .15s, border-color .15s;
         }
-        
-        .admin-nav-tab:hover {
-            color: var(--primary-color);
-        }
-        
-        .admin-nav-tab.active {
-            color: var(--primary-color);
-            border-bottom-color: var(--primary-color);
-        }
-        
-        .admin-content {
-            padding: var(--spacing-xl) 0;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .stats-grid {
+        .tab-btn:hover { color: #10b981; }
+        .tab-btn.active { color: #10b981; border-bottom-color: #10b981; }
+
+        /* ── Layout ── */
+        .page { display: none; padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+        .page.active { display: block; }
+
+        /* ── Summary bar ── */
+        .summary-bar {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--spacing-lg);
-            margin-bottom: var(--spacing-xl);
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
-        
-        .stat-card {
-            background: var(--white);
-            padding: var(--spacing-lg);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
+        .summary-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 1rem 1.25rem;
+            border: 1px solid #e5e7eb;
         }
-        
-        .stat-value {
-            font-size: var(--font-size-3xl);
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-        
-        .stat-label {
-            color: var(--gray-600);
-            font-size: var(--font-size-sm);
-            margin-top: var(--spacing-xs);
-        }
-        
-        .filter-bar {
-            background: var(--white);
-            padding: var(--spacing-lg);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            margin-bottom: var(--spacing-lg);
+        .summary-card .label { font-size: .8125rem; color: #6b7280; margin-bottom: .25rem; }
+        .summary-card .value { font-size: 1.75rem; font-weight: 700; color: #111; }
+        .summary-card.green .value { color: #10b981; }
+        .summary-card.red   .value { color: #ef4444; }
+
+        /* ── Section header ── */
+        .section-head {
             display: flex;
-            gap: var(--spacing-md);
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
             flex-wrap: wrap;
+            gap: .5rem;
         }
-        
-        .filter-item {
+        .section-head h2 { font-size: 1rem; font-weight: 600; margin: 0; }
+
+        /* ── Filters ── */
+        .filter-row {
+            display: flex;
+            gap: .75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .filter-row select,
+        .filter-row input {
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: .45rem .75rem;
+            font-size: .875rem;
+            background: #fff;
+            color: #111;
+            min-width: 160px;
             flex: 1;
-            min-width: 200px;
         }
-        
-        .table-container {
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-sm);
-            overflow: hidden;
-        }
-        
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .table th {
-            background-color: var(--gray-100);
-            padding: var(--spacing-md);
+
+        /* ── Table ── */
+        .tbl-wrap { background: #fff; border-radius: 8px; border: 1px solid #e5e7eb; overflow: hidden; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+        thead th {
+            background: #f9fafb;
+            padding: .7rem 1rem;
             text-align: left;
             font-weight: 600;
-            color: var(--gray-700);
-            border-bottom: 2px solid var(--gray-300);
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
         }
-        
-        .table td {
-            padding: var(--spacing-md);
-            border-bottom: 1px solid var(--gray-200);
-        }
-        
-        .table tr:hover {
-            background-color: var(--gray-50);
-        }
-        
-        .table-actions {
-            display: flex;
-            gap: var(--spacing-xs);
-        }
-        
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .modal.active {
-            display: flex;
-        }
-        
-        .modal-content {
-            background: var(--white);
-            border-radius: var(--radius-lg);
-            max-width: 500px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        
-        .modal-header {
-            padding: var(--spacing-lg);
-            border-bottom: 1px solid var(--gray-200);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .modal-title {
-            font-size: var(--font-size-xl);
+        tbody td { padding: .65rem 1rem; border-bottom: 1px solid #f3f4f6; color: #374151; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: #f9fafb; }
+
+        /* ── Badges ── */
+        .badge {
+            display: inline-block;
+            padding: .2rem .6rem;
+            border-radius: 9999px;
+            font-size: .75rem;
             font-weight: 600;
-            margin: 0;
         }
-        
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: var(--font-size-2xl);
+        .badge-green  { background: #d1fae5; color: #065f46; }
+        .badge-red    { background: #fee2e2; color: #991b1b; }
+        .badge-yellow { background: #fef3c7; color: #92400e; }
+        .badge-gray   { background: #f3f4f6; color: #374151; }
+        .badge-blue   { background: #dbeafe; color: #1e40af; }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .45rem .9rem;
+            border-radius: 6px;
+            font-size: .875rem;
+            font-weight: 500;
             cursor: pointer;
-            color: var(--gray-600);
-            padding: 0;
-            width: 32px;
-            height: 32px;
+            border: 1px solid transparent;
+            transition: all .15s;
+            white-space: nowrap;
+        }
+        .btn-primary   { background: #10b981; color: #fff; border-color: #10b981; }
+        .btn-primary:hover { background: #059669; }
+        .btn-danger    { background: #ef4444; color: #fff; border-color: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-outline   { background: #fff; color: #374151; border-color: #d1d5db; }
+        .btn-outline:hover { border-color: #9ca3af; }
+        .btn-ghost     { background: transparent; border-color: transparent; color: #6b7280; padding: .3rem .6rem; }
+        .btn-ghost:hover { background: #f3f4f6; color: #374151; }
+        .btn-sm        { padding: .3rem .7rem; font-size: .8125rem; }
+        .btn:disabled  { opacity: .5; cursor: not-allowed; }
+
+        /* ── Per-prodi accordion ── */
+        .prodi-block { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: .75rem; overflow: hidden; }
+        .prodi-head {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            padding: .875rem 1.25rem;
+            cursor: pointer;
+            user-select: none;
+            gap: 1rem;
         }
-        
-        .modal-body {
-            padding: var(--spacing-lg);
-        }
-        
-        .modal-footer {
-            padding: var(--spacing-lg);
-            border-top: 1px solid var(--gray-200);
+        .prodi-head:hover { background: #f9fafb; }
+        .prodi-head h3 { margin: 0; font-size: .9375rem; font-weight: 600; }
+        .prodi-head .meta { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+        .prodi-body { display: none; border-top: 1px solid #e5e7eb; }
+        .prodi-body.open { display: block; }
+
+        /* ── Session cards ── */
+        .sessions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 1rem; }
+        .session-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+        .session-card-head {
+            padding: .875rem 1rem;
             display: flex;
-            gap: var(--spacing-md);
-            justify-content: flex-end;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: .5rem;
         }
-        
-        @media (max-width: 768px) {
-            .filter-bar {
-                flex-direction: column;
-            }
-            
-            .filter-item {
-                min-width: 100%;
-            }
-            
-            .table-container {
-                overflow-x: auto;
-            }
-            
-            .table {
-                min-width: 800px;
-            }
+        .session-card-head h3 { margin: 0; font-size: .9375rem; font-weight: 600; }
+        .session-card-body { padding: .5rem 1rem .875rem 1rem; font-size: .875rem; color: #6b7280; }
+        .session-card-body .row { display: flex; gap: .25rem; margin-bottom: .3rem; }
+        .session-card-foot { padding: .75rem 1rem; border-top: 1px solid #f3f4f6; display: flex; gap: .5rem; flex-wrap: wrap; }
+
+        /* ── Modal ── */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; align-items: center; justify-content: center; }
+        .modal.open { display: flex; }
+        .modal-box { background: #fff; border-radius: 10px; width: 90%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+        .modal-head { padding: 1rem 1.25rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+        .modal-head h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+        .modal-close { background: none; border: none; font-size: 1.25rem; cursor: pointer; color: #9ca3af; padding: 0; line-height: 1; }
+        .modal-body { padding: 1.25rem; }
+        .modal-foot { padding: 1rem 1.25rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: .625rem; }
+
+        /* ── Form ── */
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: .875rem; font-weight: 500; color: #374151; margin-bottom: .375rem; }
+        .form-group input,
+        .form-group select { width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: .5rem .75rem; font-size: .875rem; color: #111; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+
+        /* ── QR Container ── */
+        #qrCodeContainer { display: flex; justify-content: center; padding: 1.5rem; background: #f9fafb; border-radius: 8px; margin-bottom: 1rem; }
+
+        /* ── Laporan ── */
+        .export-box { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; }
+
+        /* ── Spinner ── */
+        .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Empty state ── */
+        .empty { text-align: center; padding: 3rem 1rem; color: #9ca3af; font-size: .9rem; }
+
+        @media (max-width: 640px) {
+            .page { padding: 1rem; }
+            .form-row { grid-template-columns: 1fr; }
+            .summary-bar { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
 <body>
-    <div class="admin-dashboard">
-        <!-- Navbar -->
-        <nav class="admin-navbar">
-            <div class="container">
-                <div class="admin-navbar-content">
-                    <div class="admin-brand">Admin PKKMB 2026</div>
-                    <button class="btn btn-sm" style="background-color: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);" onclick="logout()">
-                        Logout
-                    </button>
-                </div>
-            </div>
-        </nav>
-        
-        <!-- Statistics Dashboard -->
-        <div class="admin-content" style="padding-top: var(--spacing-lg);">
-            <div class="container">
-                <div class="card" style="margin-bottom: var(--spacing-lg);">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                        <h3 class="card-title">📊 Statistik Kehadiran PKKMB 2026</h3>
-                        <button class="btn btn-sm btn-outline" onclick="refreshStatistics()">
-                            🔄 Refresh
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <!-- Overall Stats -->
-                        <div id="overallStats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);"></div>
-                        
-                        <!-- Per Day Stats -->
-                        <h4 style="margin-bottom: var(--spacing-md); color: var(--primary-color);">Kehadiran Per Hari</h4>
-                        <div id="perDayStats"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Navigation Tabs -->
-        <div class="admin-nav-tabs">
-            <button class="admin-nav-tab active" onclick="switchTab('mahasiswa')">
-                Kelola Mahasiswa
-            </button>
-            <button class="admin-nav-tab" onclick="switchTab('sesi')">
-                Sesi Absensi
-            </button>
-            <button class="admin-nav-tab" onclick="switchTab('monitoring')">
-                Monitoring
-            </button>
-            <button class="admin-nav-tab" onclick="switchTab('laporan')">
-                Laporan
-            </button>
-        </div>
-        
-        <!-- Main Content -->
-        <main class="admin-content">
-            <div class="container">
-                <!-- Loading State -->
-                <div id="loadingState" style="text-align: center; padding: var(--spacing-2xl);">
-                    <div class="spinner spinner-primary" style="width: 40px; height: 40px;"></div>
-                    <p style="margin-top: var(--spacing-md); color: var(--gray-600);">Memuat data...</p>
-                </div>
-                
-                <!-- Tab: Kelola Mahasiswa -->
-                <div id="tabMahasiswa" class="tab-content">
-                    <!-- Stats -->
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-value" id="statTotal">0</div>
-                            <div class="stat-label">Total Mahasiswa</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="statPending">0</div>
-                            <div class="stat-label">Menunggu Verifikasi</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="statActive">0</div>
-                            <div class="stat-label">Aktif</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="statInactive">0</div>
-                            <div class="stat-label">Tidak Aktif</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Filter -->
-                    <div class="filter-bar">
-                        <div class="filter-item">
-                            <select id="filterFakultas" class="form-select" onchange="applyFilters()">
-                                <option value="">Semua Fakultas</option>
-                            </select>
-                        </div>
-                        <div class="filter-item">
-                            <select id="filterProdi" class="form-select" onchange="applyFilters()">
-                                <option value="">Semua Program Studi</option>
-                            </select>
-                        </div>
-                        <div class="filter-item">
-                            <select id="filterStatus" class="form-select" onchange="applyFilters()">
-                                <option value="">Semua Status</option>
-                                <option value="PENDING">Pending</option>
-                                <option value="ACTIVE">Active</option>
-                                <option value="NEEDS_REVISION">Needs Revision</option>
-                                <option value="INACTIVE">Inactive</option>
-                            </select>
-                        </div>
-                        <div class="filter-item">
-                            <input 
-                                type="text" 
-                                id="filterSearch" 
-                                class="form-input" 
-                                placeholder="Cari NIM atau Nama..."
-                                oninput="applyFilters()"
-                            >
-                        </div>
-                    </div>
-                    
-                    <!-- Table -->
-                    <div class="table-container">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>NIM</th>
-                                    <th>Nama</th>
-                                    <th>Fakultas</th>
-                                    <th>Program Studi</th>
-                                    <th>Status</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="studentsTableBody">
-                                <tr>
-                                    <td colspan="6" style="text-align: center; padding: var(--spacing-xl); color: var(--gray-500);">
-                                        Memuat data...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- Tab: Sesi Absensi -->
-                <div id="tabSesi" class="tab-content">
-                    <!-- Create Session Button -->
-                    <div style="margin-bottom: var(--spacing-xl);">
-                        <button class="btn btn-primary btn-lg" onclick="openCreateSessionModal()">
-                            + Buat Sesi Absensi Baru
-                        </button>
-                    </div>
-                    
-                    <!-- Sessions List -->
-                    <div id="sessionsList" class="dashboard-grid" style="grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));">
-                        <!-- Will be populated by JS -->
-                    </div>
-                </div>
-                
-                <!-- Tab: Monitoring -->
-                <div id="tabMonitoring" class="tab-content">
-                    <div class="dashboard-header">
-                        <h2>Monitoring Absensi Real-time</h2>
-                        <button class="btn btn-primary" onclick="refreshMonitoring()">
-                            🔄 Refresh
-                        </button>
-                    </div>
-                    
-                    <!-- Session Filter -->
-                    <div class="card" style="margin-bottom: var(--spacing-lg);">
-                        <div class="card-body">
-                            <div class="form-group" style="margin: 0;">
-                                <label for="monitoringSessionFilter" class="form-label">Pilih Sesi:</label>
-                                <select id="monitoringSessionFilter" class="form-select" onchange="loadMonitoringData()">
-                                    <option value="">-- Pilih Sesi --</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Stats Cards -->
-                    <div id="monitoringStats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-lg); margin-bottom: var(--spacing-lg);"></div>
-                    
-                    <!-- Attendance Table -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Daftar Absensi</h3>
-                        </div>
-                        <div class="card-body">
-                            <div id="monitoringTableContainer">
-                                <p style="text-align: center; color: var(--gray-500); padding: var(--spacing-2xl);">
-                                    Pilih sesi untuk melihat data absensi
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Tab: Laporan -->
-                <div id="tabLaporan" class="tab-content">
-                    <div class="dashboard-header">
-                        <h2>Laporan Absensi</h2>
-                    </div>
-                    
-                    <!-- Export Options -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Export Data Absensi</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label for="laporanSessionFilter" class="form-label">Pilih Sesi:</label>
-                                <select id="laporanSessionFilter" class="form-select">
-                                    <option value="">-- Pilih Sesi --</option>
-                                    <option value="all">Semua Sesi (Gabungan)</option>
-                                </select>
-                            </div>
-                            
-                            <div style="display: flex; gap: var(--spacing-md); margin-top: var(--spacing-lg);">
-                                <button class="btn btn-primary" onclick="exportToExcel()" id="btnExportExcel">
-                                    📊 Export ke Excel
-                                </button>
-                                <button class="btn btn-outline" onclick="exportToCSV()" id="btnExportCSV">
-                                    📄 Export ke CSV
-                                </button>
-                            </div>
-                            
-                            <div id="exportInfo" style="margin-top: var(--spacing-md); color: var(--gray-600); font-size: var(--font-size-sm);">
-                                <p>Pilih sesi terlebih dahulu untuk export data absensi.</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Preview Data -->
-                    <div class="card" id="previewCard" style="display: none;">
-                        <div class="card-header">
-                            <h3 class="card-title">Preview Data</h3>
-                        </div>
-                        <div class="card-body">
-                            <div id="previewTableContainer"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+
+<!-- Navbar -->
+<nav class="navbar">
+    <div class="navbar-brand">
+        <img src="img/logo-univ.png" alt="Logo" onerror="this.style.display='none'">
+        <span>Admin PKKMB 2026</span>
     </div>
-    
-    <!-- Modal: Update Status -->
-    <div id="modalUpdateStatus" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Update Status Mahasiswa</h3>
-                <button class="modal-close" onclick="closeModal('modalUpdateStatus')">&times;</button>
+    <button class="btn-logout" onclick="logout()">Logout</button>
+</nav>
+
+<!-- Tabs -->
+<div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('statistik', this)">Statistik</button>
+    <button class="tab-btn" onclick="switchTab('mahasiswa', this)">Mahasiswa</button>
+    <button class="tab-btn" onclick="switchTab('absensi', this)">Absensi per Prodi</button>
+    <button class="tab-btn" onclick="switchTab('sesi', this)">Sesi</button>
+    <button class="tab-btn" onclick="switchTab('laporan', this)">Laporan</button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TAB: STATISTIK
+════════════════════════════════════════════ -->
+<div id="pageStatistik" class="page active">
+    <div class="section-head">
+        <h2>Ringkasan Kehadiran</h2>
+        <button class="btn btn-outline btn-sm" onclick="loadStatistik()">Refresh</button>
+    </div>
+    <div class="summary-bar" id="statOverall"></div>
+    <div id="statPerHari"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TAB: MAHASISWA
+════════════════════════════════════════════ -->
+<div id="pageMahasiswa" class="page">
+    <div class="section-head">
+        <h2>Semua Mahasiswa</h2>
+        <span id="mhsCount" style="font-size:.875rem;color:#6b7280;"></span>
+    </div>
+    <div class="filter-row">
+        <select id="fFakultas" onchange="filterMahasiswa()"><option value="">Semua Fakultas</option></select>
+        <select id="fProdi"    onchange="filterMahasiswa()"><option value="">Semua Prodi</option></select>
+        <select id="fStatus"   onchange="filterMahasiswa()">
+            <option value="">Semua Status</option>
+            <option value="ACTIVE">Aktif</option>
+            <option value="PENDING">Pending</option>
+            <option value="INACTIVE">Tidak Aktif</option>
+        </select>
+        <input id="fCari" type="text" placeholder="Cari NIM / Nama…" oninput="filterMahasiswa()">
+    </div>
+    <div class="tbl-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>NIM</th>
+                    <th>Nama</th>
+                    <th>Fakultas</th>
+                    <th>Prodi</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="tblMahasiswa"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TAB: ABSENSI PER PRODI
+════════════════════════════════════════════ -->
+<div id="pageAbsensi" class="page">
+    <div class="section-head">
+        <h2>Absensi per Program Studi</h2>
+        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+            <select id="absensiSesiFilter" class="filter-row" style="min-width:200px;border:1px solid #d1d5db;border-radius:6px;padding:.45rem .75rem;font-size:.875rem;" onchange="loadAbsensiPerProdi()">
+                <option value="">-- Pilih Sesi --</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="loadAbsensiPerProdi()">Refresh</button>
+        </div>
+    </div>
+    <div id="absensiProdiContainer">
+        <div class="empty">Pilih sesi untuk melihat data absensi per prodi</div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TAB: SESI
+════════════════════════════════════════════ -->
+<div id="pageSesi" class="page">
+    <div class="section-head">
+        <h2>Sesi Absensi</h2>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modalBuatSesi')">+ Buat Sesi</button>
+    </div>
+    <div class="sessions-grid" id="sessionsGrid"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TAB: LAPORAN
+════════════════════════════════════════════ -->
+<div id="pageLaporan" class="page">
+    <div class="section-head"><h2>Export Laporan</h2></div>
+    <div class="export-box">
+        <div class="form-group">
+            <label>Pilih Sesi</label>
+            <select id="laporanSesi">
+                <option value="">-- Pilih Sesi --</option>
+                <option value="all">Semua Sesi (Gabungan)</option>
+            </select>
+        </div>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+            <button class="btn btn-primary" id="btnExcelBtn" onclick="exportToExcel()">Export Excel</button>
+            <button class="btn btn-outline"  id="btnCsvBtn"   onclick="exportToCSV()">Export CSV</button>
+        </div>
+        <p id="exportMsg" style="margin-top:.75rem;font-size:.875rem;color:#6b7280;"></p>
+    </div>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Buat Sesi -->
+<div id="modalBuatSesi" class="modal">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h3>Buat Sesi Baru</h3>
+            <button class="modal-close" onclick="closeModal('modalBuatSesi')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Nama Kegiatan</label>
+                <input id="snNama" type="text" placeholder="PKKMB Hari 1">
             </div>
-            <div class="modal-body">
-                <div id="modalStudentInfo" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); background-color: var(--gray-50); border-radius: var(--radius-md);"></div>
-                
+            <div class="form-row">
                 <div class="form-group">
-                    <label for="modalStatus" class="form-label required">Status Baru</label>
-                    <select id="modalStatus" class="form-select">
-                        <option value="PENDING">Pending - Menunggu Verifikasi</option>
-                        <option value="ACTIVE">Active - Dapat Absensi</option>
-                        <option value="NEEDS_REVISION">Needs Revision - Perlu Revisi</option>
-                        <option value="INACTIVE">Inactive - Tidak Aktif</option>
+                    <label>Hari Ke</label>
+                    <select id="snHari">
+                        <option value="1">Hari 1</option>
+                        <option value="2">Hari 2</option>
+                        <option value="3">Hari 3</option>
                     </select>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('modalUpdateStatus')">Batal</button>
-                <button class="btn btn-primary" onclick="saveStatus()" id="btnSaveStatus">
-                    <span id="saveStatusText">Simpan</span>
-                    <span id="saveStatusSpinner" class="spinner" style="display: none;"></span>
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal: Create Session -->
-    <div id="modalCreateSession" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Buat Sesi Absensi Baru</h3>
-                <button class="modal-close" onclick="closeModal('modalCreateSession')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="formCreateSession">
-                    <div class="form-group">
-                        <label for="sessionName" class="form-label required">Nama Kegiatan</label>
-                        <input type="text" id="sessionName" class="form-input" placeholder="Contoh: PKKMB Hari 1" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="sessionHari" class="form-label required">Hari Ke</label>
-                        <select id="sessionHari" class="form-select" required>
-                            <option value="">-- Pilih Hari --</option>
-                            <option value="1">Hari 1</option>
-                            <option value="2">Hari 2</option>
-                            <option value="3">Hari 3</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="sessionDate" class="form-label required">Tanggal</label>
-                        <input type="date" id="sessionDate" class="form-input" required>
-                    </div>
-                    
-                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
-                        <div class="form-group">
-                            <label for="sessionStart" class="form-label required">Jam Mulai</label>
-                            <input type="time" id="sessionStart" class="form-input" value="07:00" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="sessionEnd" class="form-label required">Jam Selesai</label>
-                            <input type="time" id="sessionEnd" class="form-input" value="17:00" required>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('modalCreateSession')">Batal</button>
-                <button class="btn btn-primary" onclick="createSession()" id="btnCreateSession">
-                    <span id="createSessionText">Buat Sesi</span>
-                    <span id="createSessionSpinner" class="spinner" style="display: none;"></span>
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal: Edit Session -->
-    <div id="modalEditSession" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Edit Sesi Absensi</h3>
-                <button class="modal-close" onclick="closeModal('modalEditSession')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="formEditSession">
-                    <input type="hidden" id="editSessionId">
-                    
-                    <div class="form-group">
-                        <label for="editSessionName" class="form-label required">Nama Kegiatan</label>
-                        <input type="text" id="editSessionName" class="form-input" placeholder="Contoh: PKKMB Hari ke-1" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editSessionHari" class="form-label required">Hari Ke</label>
-                        <input type="number" id="editSessionHari" class="form-input" min="1" placeholder="1" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editSessionDate" class="form-label required">Tanggal</label>
-                        <input type="date" id="editSessionDate" class="form-input" required>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="editSessionStart" class="form-label required">Jam Mulai</label>
-                            <input type="time" id="editSessionStart" class="form-input" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="editSessionEnd" class="form-label required">Jam Selesai</label>
-                            <input type="time" id="editSessionEnd" class="form-input" required>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('modalEditSession')">Batal</button>
-                <button class="btn btn-primary" onclick="updateSession()" id="btnUpdateSession">
-                    <span id="updateSessionText">Simpan Perubahan</span>
-                    <span id="updateSessionSpinner" class="spinner" style="display: none;"></span>
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Modal: QR Code Display -->
-    <div id="modalQRCode" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h3 class="modal-title" id="qrModalTitle">QR Code Absensi</h3>
-                <button class="modal-close" onclick="closeModal('modalQRCode')">&times;</button>
-            </div>
-            <div class="modal-body" style="text-align: center;">
-                <div id="qrCodeContainer" style="padding: var(--spacing-xl); background-color: var(--gray-50); border-radius: var(--radius-lg); margin-bottom: var(--spacing-lg);">
-                    <!-- QR Code will be generated here -->
+                <div class="form-group">
+                    <label>Tanggal</label>
+                    <input id="snTanggal" type="date">
                 </div>
-                <p style="color: var(--gray-600);">Scan QR code ini untuk absensi</p>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('modalQRCode')">Tutup</button>
-                <button class="btn btn-outline" onclick="downloadQR()">
-                    💾 Download PNG
-                </button>
-                <button class="btn btn-primary" onclick="printQR()">
-                    🖨️ Cetak QR
-                </button>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Jam Mulai</label>
+                    <input id="snMulai" type="time" value="07:00">
+                </div>
+                <div class="form-group">
+                    <label>Jam Selesai</label>
+                    <input id="snSelesai" type="time" value="17:00">
+                </div>
             </div>
         </div>
+        <div class="modal-foot">
+            <button class="btn btn-outline" onclick="closeModal('modalBuatSesi')">Batal</button>
+            <button class="btn btn-primary" id="btnBuatSesi" onclick="buatSesi()">Buat Sesi</button>
+        </div>
     </div>
+</div>
 
-    <!-- QRCode.js Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
-    <!-- Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- SheetJS for Excel Export -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-    
-    <!-- Config & Auth -->
-    <script src="js/config.js"></script>
-    <script src="js/auth.js"></script>
-    
-    <!-- Admin Dashboard Logic -->
-    <script src="js/admin-dashboard.js"></script>
+<!-- Edit Sesi -->
+<div id="modalEditSesi" class="modal">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h3>Edit Sesi</h3>
+            <button class="modal-close" onclick="closeModal('modalEditSesi')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="esSesiId">
+            <div class="form-group">
+                <label>Nama Kegiatan</label>
+                <input id="esNama" type="text">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Hari Ke</label>
+                    <input id="esHari" type="number" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Tanggal</label>
+                    <input id="esTanggal" type="date">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Jam Mulai</label>
+                    <input id="esMulai" type="time">
+                </div>
+                <div class="form-group">
+                    <label>Jam Selesai</label>
+                    <input id="esSelesai" type="time">
+                </div>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn btn-outline" onclick="closeModal('modalEditSesi')">Batal</button>
+            <button class="btn btn-primary" id="btnSimpanSesi" onclick="simpanEditSesi()">Simpan</button>
+        </div>
+    </div>
+</div>
+
+<!-- QR Code -->
+<div id="modalQR" class="modal">
+    <div class="modal-box" style="max-width:400px;">
+        <div class="modal-head">
+            <h3 id="qrTitle">QR Code</h3>
+            <button class="modal-close" onclick="closeModal('modalQR')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="qrCodeContainer"></div>
+            <p style="text-align:center;font-size:.875rem;color:#6b7280;margin:0;">Scan QR code ini untuk absensi</p>
+        </div>
+        <div class="modal-foot">
+            <button class="btn btn-outline" onclick="downloadQR()">Download PNG</button>
+            <button class="btn btn-primary" onclick="printQR()">Cetak</button>
+        </div>
+    </div>
+</div>
+
+<!-- Update Status Mahasiswa -->
+<div id="modalStatusMhs" class="modal">
+    <div class="modal-box" style="max-width:380px;">
+        <div class="modal-head">
+            <h3>Ubah Status Mahasiswa</h3>
+            <button class="modal-close" onclick="closeModal('modalStatusMhs')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="mhsInfoBox" style="background:#f9fafb;border-radius:6px;padding:.875rem;margin-bottom:1rem;font-size:.875rem;"></div>
+            <div class="form-group">
+                <label>Status Baru</label>
+                <select id="mhsStatusBaru">
+                    <option value="ACTIVE">Aktif</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="INACTIVE">Tidak Aktif</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn btn-outline" onclick="closeModal('modalStatusMhs')">Batal</button>
+            <button class="btn btn-primary" onclick="simpanStatusMhs()">Simpan</button>
+        </div>
+    </div>
+</div>
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin-dashboard.js"></script>
 </body>
 </html>
