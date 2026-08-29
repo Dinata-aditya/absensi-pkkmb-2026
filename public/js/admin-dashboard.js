@@ -788,7 +788,6 @@ async function cetakLembarAbsensi() {
                     <td style="text-align:center">${i + 1}</td>
                     <td>${m.nama_lengkap}</td>
                     <td>${m.nim}</td>
-                    <td>${m.phone || '-'}</td>
                     <td style="text-align:center">${statusCell}</td>
                     <td></td>
                 </tr>`;
@@ -839,7 +838,6 @@ async function cetakLembarAbsensi() {
                             <th style="width:45px">NO</th>
                             <th>NAMA LENGKAP</th>
                             <th style="width:120px">NIM</th>
-                            <th style="width:130px">NO. HP</th>
                             <th style="width:80px">STATUS</th>
                             <th style="width:90px">PARAF</th>
                         </tr>
