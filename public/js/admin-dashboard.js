@@ -712,3 +712,226 @@ function formatDT(str) {
 function today() {
     return new Date().toISOString().split('T')[0];
 }
+
+
+// ═════════════════════════════════════════════════
+// CETAK LEMBAR ABSENSI (FORMAT FORMAL PER PRODI)
+// ═════════════════════════════════════════════════
+async function cetakLembarAbsensi() {
+    const sid = document.getElementById('laporanSesi').value;
+    if (!sid || sid === 'all') {
+        alert('Pilih satu sesi terlebih dahulu (tidak bisa Semua Sesi)');
+        return;
+    }
+
+    const btn = document.getElementById('btnPdfBtn');
+    btn.disabled = true;
+    btn.textContent = 'Memuat…';
+
+    try {
+        const session = allSessions.find(s => s.id === sid);
+        if (!session) throw new Error('Sesi tidak ditemukan');
+
+        // Ambil semua mahasiswa aktif + data prodi/fakultas
+        const { data: mhsList, error: mhsErr } = await supabase
+            .from('students')
+            .select('id, nim, nama_lengkap, phone, faculties:fakultas_id(nama), study_programs:prodi_id(id, nama)')
+            .eq('status', 'ACTIVE')
+            .order('nama_lengkap');
+
+        if (mhsErr) throw mhsErr;
+
+        // Ambil data absensi sesi ini
+        const { data: atts, error: attErr } = await supabase
+            .from('attendances')
+            .select('student_id, status')
+            .eq('session_id', sid);
+
+        if (attErr) throw attErr;
+
+        // Map student_id → status
+        const attMap = {};
+        (atts || []).forEach(a => { attMap[a.student_id] = a.status; });
+
+        // Group mahasiswa per prodi
+        const byProdi = {};
+        (mhsList || []).forEach(m => {
+            const key  = m.study_programs?.id   || 'lainnya';
+            const nama = m.study_programs?.nama  || 'Lainnya';
+            const fak  = m.faculties?.nama        || '';
+            if (!byProdi[key]) byProdi[key] = { nama, fak, list: [] };
+            byProdi[key].list.push(m);
+        });
+
+        // Format tanggal & waktu
+        const tglLong  = new Date(session.tanggal).toLocaleDateString('id-ID', {
+            weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+        });
+        const waktu = `${session.jam_mulai} s/d ${session.jam_selesai}`;
+
+        // Bangun halaman HTML untuk setiap prodi
+        let pages = '';
+        Object.values(byProdi)
+            .sort((a, b) => a.nama.localeCompare(b.nama))
+            .forEach((prodi, pi) => {
+
+            const rows = prodi.list.map((m, i) => {
+                const status = attMap[m.id];
+                const statusCell = status === 'HADIR'
+                    ? `<span style="color:#16a34a;font-weight:600;">✓ Hadir</span>`
+                    : status === 'ALPHA'
+                    ? `<span style="color:#dc2626;">Alpha</span>`
+                    : `<span style="color:#9ca3af;">-</span>`;
+
+                return `
+                <tr>
+                    <td style="text-align:center">${i + 1}</td>
+                    <td>${m.nama_lengkap}</td>
+                    <td>${m.nim}</td>
+                    <td>${m.phone || '-'}</td>
+                    <td style="text-align:center">${statusCell}</td>
+                    <td></td>
+                </tr>`;
+            }).join('');
+
+            pages += `
+            <div class="page-break">
+                <!-- HEADER -->
+                <div class="header">
+                    <div class="logo-row">
+                        <img src="img/logo-univ.png" class="logo" onerror="this.style.display='none'" alt="">
+                        <img src="img/logo-pkkmb.png" class="logo" onerror="this.style.display='none'" alt="">
+                    </div>
+                    <h1>ABSENSI KEHADIRAN</h1>
+                    <h2>PKKMB UNIVERSITAS PASIR PENGARAIAN 2026</h2>
+                    <h3>${session.nama_kegiatan.toUpperCase()}</h3>
+                </div>
+
+                <div class="info-table">
+                    <table>
+                        <tr>
+                            <td style="width:130px">Fakultas</td>
+                            <td>: ${prodi.fak || '-'}</td>
+                        </tr>
+                        <tr>
+                            <td>Program Studi</td>
+                            <td>: <strong>${prodi.nama}</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Hari / Tanggal</td>
+                            <td>: ${tglLong}</td>
+                        </tr>
+                        <tr>
+                            <td>Waktu</td>
+                            <td>: ${waktu}</td>
+                        </tr>
+                        <tr>
+                            <td>Jumlah Mahasiswa</td>
+                            <td>: ${prodi.list.length} orang</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- TABEL ABSENSI -->
+                <table class="abs-table">
+                    <thead>
+                        <tr>
+                            <th style="width:45px">NO</th>
+                            <th>NAMA LENGKAP</th>
+                            <th style="width:120px">NIM</th>
+                            <th style="width:130px">NO. HP</th>
+                            <th style="width:80px">STATUS</th>
+                            <th style="width:90px">PARAF</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+
+                <!-- FOOTER TTD -->
+                <div class="sign-row">
+                    <div class="sign-box">
+                        <div>Panitia PKKMB 2026</div>
+                        <div class="sign-line"></div>
+                        <div>( _________________________ )</div>
+                    </div>
+                    <div class="sign-box" style="text-align:right">
+                        <div>Pasir Pengaraian, ${tglLong}</div>
+                        <div>Mengetahui,</div>
+                        <div class="sign-line"></div>
+                        <div>( _________________________ )</div>
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        // Buka print window
+        const w = window.open('', '', 'width=900,height=700');
+        w.document.write(`<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Lembar Absensi – ${session.nama_kegiatan}</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Times New Roman', serif; font-size: 12pt; color: #000; background: #fff; }
+
+    .page-break { page-break-after: always; padding: 2cm 2.5cm; }
+    .page-break:last-child { page-break-after: avoid; }
+
+    /* Header */
+    .header { text-align: center; margin-bottom: 1.5rem; border-bottom: 3px solid #000; padding-bottom: 1rem; }
+    .logo-row { display: flex; justify-content: center; gap: 2rem; margin-bottom: .75rem; }
+    .logo { height: 70px; width: 70px; object-fit: contain; }
+    .header h1 { font-size: 14pt; font-weight: 700; letter-spacing: 1px; margin-bottom: .3rem; }
+    .header h2 { font-size: 13pt; font-weight: 700; margin-bottom: .3rem; }
+    .header h3 { font-size: 12pt; font-weight: 700; }
+
+    /* Info table */
+    .info-table { margin-bottom: 1.25rem; }
+    .info-table table { border-collapse: collapse; font-size: 11pt; }
+    .info-table td { padding: .2rem .5rem; vertical-align: top; }
+
+    /* Attendance table */
+    .abs-table { width: 100%; border-collapse: collapse; font-size: 11pt; margin-bottom: 2rem; }
+    .abs-table th {
+        border: 1.5px solid #000;
+        padding: .45rem .6rem;
+        text-align: left;
+        font-weight: 700;
+        background: #f0f0f0;
+    }
+    .abs-table td {
+        border: 1px solid #000;
+        padding: .5rem .6rem;
+        min-height: 28px;
+    }
+    .abs-table tbody tr:nth-child(even) { background: #fafafa; }
+
+    /* Signature row */
+    .sign-row { display: flex; justify-content: space-between; margin-top: 2rem; font-size: 11pt; }
+    .sign-box { }
+    .sign-line { height: 50px; }
+
+    @media print {
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .page-break { padding: 1.5cm 2cm; }
+    }
+</style>
+</head>
+<body>${pages}</body>
+</html>`);
+
+        w.document.close();
+        w.focus();
+        setTimeout(() => { w.print(); }, 600);
+
+        document.getElementById('exportMsg').textContent = `Lembar absensi untuk ${Object.keys(byProdi).length} prodi siap dicetak`;
+
+    } catch (e) {
+        console.error(e);
+        alert('Gagal: ' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Cetak Lembar Absensi';
+    }
+}

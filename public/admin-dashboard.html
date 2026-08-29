@@ -353,10 +353,23 @@
                 <option value="all">Semua Sesi (Gabungan)</option>
             </select>
         </div>
-        <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
-            <button class="btn btn-primary" id="btnExcelBtn" onclick="exportToExcel()">Export Excel</button>
-            <button class="btn btn-outline"  id="btnCsvBtn"   onclick="exportToCSV()">Export CSV</button>
+
+        <div style="margin-bottom:1rem;">
+            <div style="font-size:.8125rem;font-weight:600;color:#374151;margin-bottom:.5rem;">Format Data (Excel / CSV)</div>
+            <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+                <button class="btn btn-primary" id="btnExcelBtn" onclick="exportToExcel()">Export Excel</button>
+                <button class="btn btn-outline" id="btnCsvBtn"   onclick="exportToCSV()">Export CSV</button>
+            </div>
         </div>
+
+        <div style="border-top:1px solid #e5e7eb;padding-top:1rem;">
+            <div style="font-size:.8125rem;font-weight:600;color:#374151;margin-bottom:.375rem;">Lembar Absensi (Print per Prodi)</div>
+            <div style="font-size:.8125rem;color:#6b7280;margin-bottom:.75rem;">
+                Menghasilkan lembar absensi formal seperti tabel fisik, terpisah per prodi — siap cetak.
+            </div>
+            <button class="btn btn-outline" id="btnPdfBtn" onclick="cetakLembarAbsensi()">Cetak Lembar Absensi</button>
+        </div>
+
         <p id="exportMsg" style="margin-top:.75rem;font-size:.875rem;color:#6b7280;"></p>
     </div>
 </div>
