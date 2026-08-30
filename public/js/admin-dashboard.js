@@ -608,22 +608,131 @@ function printQR() {
 // ═════════════════════════════════════════════════
 // TAB: LAPORAN
 // ═════════════════════════════════════════════════
+// ═════════════════════════════════════════════════
+// TAB: LAPORAN — step-by-step filter
+// ═════════════════════════════════════════════════
+
+// State laporan
+let laporanState = { sesiId: null, fakultasId: null, fakultasNama: null, prodiId: null, prodiNama: null };
+
+// Sesi dipilih → tampilkan daftar fakultas
+async function onLaporanSesiChange() {
+    const sid = document.getElementById('laporanSesi').value;
+
+    // Reset state
+    laporanState = { sesiId: sid, fakultasId: null, fakultasNama: null, prodiId: null, prodiNama: null };
+
+    // Sembunyikan step 2,3,4
+    document.getElementById('stepFakultas').style.display  = 'none';
+    document.getElementById('stepProdi').style.display     = 'none';
+    document.getElementById('stepDownload').style.display  = 'none';
+    document.getElementById('exportMsg').textContent       = '';
+
+    if (!sid) return;
+
+    // Ambil semua mahasiswa aktif → kumpulkan daftar fakultas unik
+    const chips = allFaculties.map(f => `
+        <button class="chip" onclick="onLaporanFakultasClick('${f.id}','${f.nama.replace(/'/g,"\\'")}')">
+            ${f.nama}
+        </button>
+    `).join('');
+
+    document.getElementById('laporanFakultasList').innerHTML = chips;
+    document.getElementById('stepFakultas').style.display = 'block';
+}
+
+// Fakultas dipilih → tampilkan daftar prodi
+function onLaporanFakultasClick(fid, fnama) {
+    laporanState.fakultasId   = fid;
+    laporanState.fakultasNama = fnama;
+    laporanState.prodiId      = null;
+    laporanState.prodiNama    = null;
+
+    // Highlight chip aktif
+    document.querySelectorAll('#laporanFakultasList .chip').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // Sembunyikan step 3,4
+    document.getElementById('stepProdi').style.display    = 'none';
+    document.getElementById('stepDownload').style.display = 'none';
+
+    // Filter prodi berdasarkan fakultas
+    const prodiFak = allProdi.filter(p => p.faculty_id === fid);
+
+    if (!prodiFak.length) {
+        document.getElementById('stepProdi').style.display = 'none';
+        // Langsung ke download tanpa filter prodi
+        laporanState.prodiId   = 'all';
+        laporanState.prodiNama = 'Semua Prodi';
+        tampilkanStepDownload();
+        return;
+    }
+
+    const chips = prodiFak.map(p => `
+        <button class="chip" onclick="onLaporanProdiClick('${p.id}','${p.nama.replace(/'/g,"\\'")}')">
+            ${p.nama}
+        </button>
+    `).join('');
+
+    document.getElementById('laporanProdiList').innerHTML = chips;
+    document.getElementById('stepProdi').style.display    = 'block';
+    document.getElementById('stepDownload').style.display = 'none';
+}
+
+// Prodi dipilih → tampilkan tombol download
+function onLaporanProdiClick(pid, pnama) {
+    laporanState.prodiId   = pid;
+    laporanState.prodiNama = pnama;
+
+    // Highlight chip aktif
+    document.querySelectorAll('#laporanProdiList .chip').forEach(c => c.classList.remove('active'));
+    event.target.classList.add('active');
+
+    tampilkanStepDownload();
+}
+
+function tampilkanStepDownload() {
+    const sesi = allSessions.find(s => s.id === laporanState.sesiId);
+    document.getElementById('laporanPreviewInfo').innerHTML = `
+        <div style="display:grid;gap:.25rem;">
+            <div><strong>Sesi</strong>: ${sesi?.nama_kegiatan || '-'} (Hari ${sesi?.hari_ke || '-'})</div>
+            <div><strong>Fakultas</strong>: ${laporanState.fakultasNama || '-'}</div>
+            <div><strong>Program Studi</strong>: ${laporanState.prodiNama || '-'}</div>
+        </div>
+    `;
+    document.getElementById('stepDownload').style.display = 'block';
+}
+
+// Ambil data export sesuai filter state
 async function getExportData(sessionId) {
     let q = supabase.from('attendances').select(`
         id, status, scan_time,
-        students(nim, nama_lengkap, faculties:fakultas_id(nama), study_programs:prodi_id(nama)),
+        students(nim, nama_lengkap, fakultas_id, prodi_id, faculties:fakultas_id(nama), study_programs:prodi_id(nama)),
         attendance_sessions(nama_kegiatan, hari_ke, tanggal)
     `).order('scan_time');
 
-    if (sessionId !== 'all') q = q.eq('session_id', sessionId);
+    if (sessionId && sessionId !== 'all') q = q.eq('session_id', sessionId);
 
     const { data, error } = await q;
     if (error) throw error;
-    return data || [];
+
+    let rows = data || [];
+
+    // Filter by fakultas
+    if (laporanState.fakultasId) {
+        rows = rows.filter(r => r.students?.fakultas_id === laporanState.fakultasId);
+    }
+
+    // Filter by prodi
+    if (laporanState.prodiId && laporanState.prodiId !== 'all') {
+        rows = rows.filter(r => r.students?.prodi_id === laporanState.prodiId);
+    }
+
+    return rows;
 }
 
 async function exportToExcel() {
-    const sid = document.getElementById('laporanSesi').value;
+    const sid = laporanState.sesiId;
     if (!sid) { alert('Pilih sesi terlebih dahulu'); return; }
 
     const btn = document.getElementById('btnExcelBtn');
@@ -631,7 +740,7 @@ async function exportToExcel() {
 
     try {
         const rows = await getExportData(sid);
-        if (!rows.length) { alert('Tidak ada data'); return; }
+        if (!rows.length) { alert('Tidak ada data untuk filter ini'); return; }
 
         const data = rows.map((r, i) => ({
             No: i+1,
@@ -651,15 +760,17 @@ async function exportToExcel() {
         ws['!cols'] = [5,12,25,30,30,25,8,14,10,18].map(w => ({ wch: w }));
         XLSX.utils.book_append_sheet(wb, ws, 'Absensi');
 
-        const name = sid === 'all' ? 'Semua_Sesi' : (allSessions.find(s=>s.id===sid)?.nama_kegiatan.replace(/\s+/g,'_') || 'Absensi');
-        XLSX.writeFile(wb, `Laporan_${name}_${today()}.xlsx`);
-        document.getElementById('exportMsg').textContent = `Berhasil export ${rows.length} data`;
+        const prodiLabel = laporanState.prodiNama?.replace(/\s+/g,'_') || 'Semua';
+        const sesi = allSessions.find(s => s.id === sid);
+        const sesiLabel = sesi?.nama_kegiatan.replace(/\s+/g,'_') || 'Sesi';
+        XLSX.writeFile(wb, `Absensi_${sesiLabel}_${prodiLabel}_${today()}.xlsx`);
+        document.getElementById('exportMsg').textContent = `Berhasil download ${rows.length} data`;
     } catch(e) { alert('Gagal: ' + e.message); }
-    finally { btn.disabled = false; btn.textContent = 'Export Excel'; }
+    finally { btn.disabled = false; btn.textContent = 'Download Excel'; }
 }
 
 async function exportToCSV() {
-    const sid = document.getElementById('laporanSesi').value;
+    const sid = laporanState.sesiId;
     if (!sid) { alert('Pilih sesi terlebih dahulu'); return; }
 
     const btn = document.getElementById('btnCsvBtn');
@@ -667,7 +778,7 @@ async function exportToCSV() {
 
     try {
         const rows = await getExportData(sid);
-        if (!rows.length) { alert('Tidak ada data'); return; }
+        if (!rows.length) { alert('Tidak ada data untuk filter ini'); return; }
 
         const headers = ['No','NIM','Nama','Fakultas','Program Studi','Sesi','Hari Ke','Tanggal','Status','Waktu Scan'];
         const lines = rows.map((r,i) => [
@@ -681,11 +792,13 @@ async function exportToCSV() {
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
-        const name = sid === 'all' ? 'Semua_Sesi' : (allSessions.find(s=>s.id===sid)?.nama_kegiatan.replace(/\s+/g,'_') || 'Absensi');
-        a.href = url; a.download = `Laporan_${name}_${today()}.csv`; a.click();
-        document.getElementById('exportMsg').textContent = `Berhasil export ${rows.length} data`;
+        const prodiLabel = laporanState.prodiNama?.replace(/\s+/g,'_') || 'Semua';
+        const sesi = allSessions.find(s => s.id === sid);
+        const sesiLabel = sesi?.nama_kegiatan.replace(/\s+/g,'_') || 'Sesi';
+        a.href = url; a.download = `Absensi_${sesiLabel}_${prodiLabel}_${today()}.csv`; a.click();
+        document.getElementById('exportMsg').textContent = `Berhasil download ${rows.length} data`;
     } catch(e) { alert('Gagal: ' + e.message); }
-    finally { btn.disabled = false; btn.textContent = 'Export CSV'; }
+    finally { btn.disabled = false; btn.textContent = 'Download CSV'; }
 }
 
 // ═════════════════════════════════════════════════
@@ -717,42 +830,45 @@ function today() {
 // CETAK LEMBAR ABSENSI (FORMAT FORMAL PER PRODI)
 // ═════════════════════════════════════════════════
 async function cetakLembarAbsensi() {
-    const sid = document.getElementById('laporanSesi').value;
-    if (!sid || sid === 'all') {
-        alert('Pilih satu sesi terlebih dahulu (tidak bisa Semua Sesi)');
-        return;
-    }
+    const sid = laporanState.sesiId;
+    if (!sid) { alert('Pilih sesi terlebih dahulu'); return; }
 
     const btn = document.getElementById('btnPdfBtn');
-    btn.disabled = true;
-    btn.textContent = 'Memuat…';
+    btn.disabled = true; btn.textContent = 'Memuat…';
 
     try {
         const session = allSessions.find(s => s.id === sid);
         if (!session) throw new Error('Sesi tidak ditemukan');
 
-        // Ambil semua mahasiswa aktif + data prodi/fakultas
-        const { data: mhsList, error: mhsErr } = await supabase
+        // Ambil semua mahasiswa aktif
+        let mhsQuery = supabase
             .from('students')
-            .select('id, nim, nama_lengkap, phone, faculties:fakultas_id(nama), study_programs:prodi_id(id, nama)')
+            .select('id, nim, nama_lengkap, fakultas_id, prodi_id, faculties:fakultas_id(nama), study_programs:prodi_id(id, nama)')
             .eq('status', 'ACTIVE')
             .order('nama_lengkap');
 
+        // Filter by fakultas
+        if (laporanState.fakultasId) {
+            mhsQuery = mhsQuery.eq('fakultas_id', laporanState.fakultasId);
+        }
+
+        // Filter by prodi
+        if (laporanState.prodiId && laporanState.prodiId !== 'all') {
+            mhsQuery = mhsQuery.eq('prodi_id', laporanState.prodiId);
+        }
+
+        const { data: mhsList, error: mhsErr } = await mhsQuery;
         if (mhsErr) throw mhsErr;
 
         // Ambil data absensi sesi ini
         const { data: atts, error: attErr } = await supabase
-            .from('attendances')
-            .select('student_id, status')
-            .eq('session_id', sid);
-
+            .from('attendances').select('student_id, status').eq('session_id', sid);
         if (attErr) throw attErr;
 
-        // Map student_id → status
         const attMap = {};
         (atts || []).forEach(a => { attMap[a.student_id] = a.status; });
 
-        // Group mahasiswa per prodi
+        // Group per prodi
         const byProdi = {};
         (mhsList || []).forEach(m => {
             const key  = m.study_programs?.id   || 'lainnya';
@@ -762,29 +878,28 @@ async function cetakLembarAbsensi() {
             byProdi[key].list.push(m);
         });
 
-        // Format tanggal & waktu
-        const tglLong  = new Date(session.tanggal).toLocaleDateString('id-ID', {
+        if (!Object.keys(byProdi).length) {
+            alert('Tidak ada data mahasiswa untuk filter ini');
+            return;
+        }
+
+        const tglLong = new Date(session.tanggal).toLocaleDateString('id-ID', {
             weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
         });
-        const waktu = `${session.jam_mulai ? session.jam_mulai.slice(0,5) : '-'}`;
+        const waktu = session.jam_mulai ? session.jam_mulai.slice(0,5) : '-';
 
-        // Bangun halaman HTML untuk setiap prodi
         let pages = '';
-        Object.values(byProdi)
-            .sort((a, b) => a.nama.localeCompare(b.nama))
-            .forEach((prodi, pi) => {
-
+        Object.values(byProdi).sort((a,b) => a.nama.localeCompare(b.nama)).forEach(prodi => {
             const rows = prodi.list.map((m, i) => {
                 const status = attMap[m.id];
                 const statusCell = status === 'HADIR'
-                    ? `<span style="color:#16a34a;font-weight:600;">✓ Hadir</span>`
+                    ? `<span style="color:#16a34a;font-weight:600;">&#10003; Hadir</span>`
                     : status === 'ALPHA'
                     ? `<span style="color:#dc2626;">Alpha</span>`
                     : `<span style="color:#9ca3af;">-</span>`;
 
-                return `
-                <tr>
-                    <td style="text-align:center">${i + 1}</td>
+                return `<tr>
+                    <td style="text-align:center">${i+1}</td>
                     <td>${m.nama_lengkap}</td>
                     <td>${m.nim}</td>
                     <td style="text-align:center">${statusCell}</td>
@@ -794,7 +909,6 @@ async function cetakLembarAbsensi() {
 
             pages += `
             <div class="page-break">
-                <!-- HEADER -->
                 <div class="header">
                     <div class="logo-row">
                         <img src="img/logo-univ.png" class="logo" onerror="this.style.display='none'" alt="">
@@ -804,33 +918,15 @@ async function cetakLembarAbsensi() {
                     <h2>PKKMB UNIVERSITAS PASIR PENGARAIAN 2026</h2>
                     <h3>${session.nama_kegiatan.toUpperCase()}</h3>
                 </div>
-
                 <div class="info-table">
                     <table>
-                        <tr>
-                            <td style="width:130px">Fakultas</td>
-                            <td>: ${prodi.fak || '-'}</td>
-                        </tr>
-                        <tr>
-                            <td>Program Studi</td>
-                            <td>: <strong>${prodi.nama}</strong></td>
-                        </tr>
-                        <tr>
-                            <td>Hari / Tanggal</td>
-                            <td>: ${tglLong}</td>
-                        </tr>
-                        <tr>
-                            <td>Waktu</td>
-                            <td>: ${waktu}</td>
-                        </tr>
-                        <tr>
-                            <td>Jumlah Mahasiswa</td>
-                            <td>: ${prodi.list.length} orang</td>
-                        </tr>
+                        <tr><td>Fakultas</td><td>: ${prodi.fak || '-'}</td></tr>
+                        <tr><td>Program Studi</td><td>: <strong>${prodi.nama}</strong></td></tr>
+                        <tr><td>Hari / Tanggal</td><td>: ${tglLong}</td></tr>
+                        <tr><td>Waktu</td><td>: ${waktu}</td></tr>
+                        <tr><td>Jumlah Mahasiswa</td><td>: ${prodi.list.length} orang</td></tr>
                     </table>
                 </div>
-
-                <!-- TABEL ABSENSI -->
                 <table class="abs-table">
                     <thead>
                         <tr>
@@ -843,8 +939,6 @@ async function cetakLembarAbsensi() {
                     </thead>
                     <tbody>${rows}</tbody>
                 </table>
-
-                <!-- FOOTER TTD -->
                 <div class="sign-row">
                     <div class="sign-box">
                         <div>Panitia PKKMB 2026</div>
@@ -861,70 +955,38 @@ async function cetakLembarAbsensi() {
             </div>`;
         });
 
-        // Buka print window
         const w = window.open('', '', 'width=900,height=700');
-        w.document.write(`<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<title>Lembar Absensi – ${session.nama_kegiatan}</title>
-<style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Times New Roman', serif; font-size: 12pt; color: #000; background: #fff; }
-
-    .page-break { page-break-after: always; padding: 2cm 2.5cm; }
-    .page-break:last-child { page-break-after: avoid; }
-
-    /* Header */
-    .header { text-align: center; margin-bottom: 1.5rem; border-bottom: 3px solid #000; padding-bottom: 1rem; }
-    .logo-row { display: flex; justify-content: center; gap: 2rem; margin-bottom: .75rem; }
-    .logo { height: 70px; width: 70px; object-fit: contain; }
-    .header h1 { font-size: 14pt; font-weight: 700; letter-spacing: 1px; margin-bottom: .3rem; }
-    .header h2 { font-size: 13pt; font-weight: 700; margin-bottom: .3rem; }
-    .header h3 { font-size: 12pt; font-weight: 700; }
-
-    /* Info table */
-    .info-table { margin-bottom: 1.25rem; }
-    .info-table table { border-collapse: collapse; font-size: 11pt; }
-    .info-table td { padding: .2rem .5rem; vertical-align: top; }
-
-    /* Attendance table */
-    .abs-table { width: 100%; border-collapse: collapse; font-size: 11pt; margin-bottom: 2rem; }
-    .abs-table th {
-        border: 1.5px solid #000;
-        padding: .45rem .6rem;
-        text-align: left;
-        font-weight: 700;
-        background: #f0f0f0;
-    }
-    .abs-table td {
-        border: 1px solid #000;
-        padding: .5rem .6rem;
-        min-height: 28px;
-    }
-    .abs-table tbody tr:nth-child(even) { background: #fafafa; }
-
-    /* Signature row */
-    .sign-row { display: flex; justify-content: space-between; margin-top: 2rem; font-size: 11pt; }
-    .sign-box { }
-    .sign-line { height: 50px; }
-
-    @media print {
-        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .page-break { padding: 1.5cm 2cm; }
-    }
-</style>
-</head>
-<body>${pages}</body>
-</html>`);
-
+        w.document.write(`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8">
+        <title>Lembar Absensi</title>
+        <style>
+            *{box-sizing:border-box;margin:0;padding:0;}
+            body{font-family:'Times New Roman',serif;font-size:12pt;color:#000;background:#fff;}
+            .page-break{page-break-after:always;padding:2cm 2.5cm;}
+            .page-break:last-child{page-break-after:avoid;}
+            .header{text-align:center;margin-bottom:1.5rem;border-bottom:3px solid #000;padding-bottom:1rem;}
+            .logo-row{display:flex;justify-content:center;gap:2rem;margin-bottom:.75rem;}
+            .logo{height:70px;width:70px;object-fit:contain;}
+            .header h1{font-size:14pt;font-weight:700;letter-spacing:1px;margin-bottom:.3rem;}
+            .header h2{font-size:13pt;font-weight:700;margin-bottom:.3rem;}
+            .header h3{font-size:12pt;font-weight:700;}
+            .info-table{margin-bottom:1.25rem;}
+            .info-table table{border-collapse:collapse;font-size:11pt;}
+            .info-table td{padding:.2rem .5rem;vertical-align:top;}
+            .abs-table{width:100%;border-collapse:collapse;font-size:11pt;margin-bottom:2rem;}
+            .abs-table th{border:1.5px solid #000;padding:.45rem .6rem;text-align:left;font-weight:700;background:#f0f0f0;}
+            .abs-table td{border:1px solid #000;padding:.5rem .6rem;}
+            .abs-table tbody tr:nth-child(even){background:#fafafa;}
+            .sign-row{display:flex;justify-content:space-between;margin-top:2rem;font-size:11pt;}
+            .sign-line{height:50px;}
+            @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}.page-break{padding:1.5cm 2cm;}}
+        </style></head><body>${pages}</body></html>`);
         w.document.close();
         w.focus();
         setTimeout(() => { w.print(); }, 600);
 
         document.getElementById('exportMsg').textContent = `Lembar absensi untuk ${Object.keys(byProdi).length} prodi siap dicetak`;
 
-    } catch (e) {
+    } catch(e) {
         console.error(e);
         alert('Gagal: ' + e.message);
     } finally {

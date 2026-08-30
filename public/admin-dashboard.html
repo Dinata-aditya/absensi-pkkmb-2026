@@ -346,33 +346,61 @@
 <div id="pageLaporan" class="page">
     <div class="section-head"><h2>Export Laporan</h2></div>
     <div class="export-box">
-        <div class="form-group">
-            <label>Pilih Sesi</label>
-            <select id="laporanSesi">
+
+        <!-- STEP 1: Pilih Sesi -->
+        <div class="step-block">
+            <div class="step-label">1. Pilih Sesi</div>
+            <select id="laporanSesi" onchange="onLaporanSesiChange()">
                 <option value="">-- Pilih Sesi --</option>
-                <option value="all">Semua Sesi (Gabungan)</option>
             </select>
         </div>
 
-        <div style="margin-bottom:1rem;">
-            <div style="font-size:.8125rem;font-weight:600;color:#374151;margin-bottom:.5rem;">Format Data (Excel / CSV)</div>
-            <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
-                <button class="btn btn-primary" id="btnExcelBtn" onclick="exportToExcel()">Export Excel</button>
-                <button class="btn btn-outline" id="btnCsvBtn"   onclick="exportToCSV()">Export CSV</button>
-            </div>
+        <!-- STEP 2: Pilih Fakultas (muncul setelah sesi dipilih) -->
+        <div class="step-block" id="stepFakultas" style="display:none;">
+            <div class="step-label">2. Pilih Fakultas</div>
+            <div id="laporanFakultasList" class="chip-list"></div>
         </div>
 
-        <div style="border-top:1px solid #e5e7eb;padding-top:1rem;">
-            <div style="font-size:.8125rem;font-weight:600;color:#374151;margin-bottom:.375rem;">Lembar Absensi (Print per Prodi)</div>
-            <div style="font-size:.8125rem;color:#6b7280;margin-bottom:.75rem;">
-                Menghasilkan lembar absensi formal seperti tabel fisik, terpisah per prodi — siap cetak.
+        <!-- STEP 3: Pilih Prodi (muncul setelah fakultas dipilih) -->
+        <div class="step-block" id="stepProdi" style="display:none;">
+            <div class="step-label">3. Pilih Program Studi</div>
+            <div id="laporanProdiList" class="chip-list"></div>
+        </div>
+
+        <!-- STEP 4: Download (muncul setelah prodi dipilih) -->
+        <div class="step-block" id="stepDownload" style="display:none;">
+            <div class="step-label">4. Download / Cetak</div>
+            <div id="laporanPreviewInfo" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:.875rem;margin-bottom:1rem;font-size:.875rem;color:#374151;"></div>
+            <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+                <button class="btn btn-primary" id="btnExcelBtn" onclick="exportToExcel()">Download Excel</button>
+                <button class="btn btn-outline" id="btnCsvBtn"   onclick="exportToCSV()">Download CSV</button>
+                <button class="btn btn-outline" id="btnPdfBtn"   onclick="cetakLembarAbsensi()">Cetak Lembar Absensi</button>
             </div>
-            <button class="btn btn-outline" id="btnPdfBtn" onclick="cetakLembarAbsensi()">Cetak Lembar Absensi</button>
         </div>
 
         <p id="exportMsg" style="margin-top:.75rem;font-size:.875rem;color:#6b7280;"></p>
     </div>
 </div>
+
+<style>
+    .step-block { margin-bottom: 1.25rem; }
+    .step-block:last-child { margin-bottom: 0; }
+    .step-label { font-size: .8125rem; font-weight: 600; color: #374151; margin-bottom: .5rem; }
+    .step-block select { width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: .5rem .75rem; font-size: .875rem; color: #111; }
+    .chip-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+    .chip {
+        padding: .4rem 1rem;
+        border-radius: 9999px;
+        border: 1px solid #d1d5db;
+        background: #fff;
+        font-size: .875rem;
+        cursor: pointer;
+        transition: all .15s;
+        color: #374151;
+    }
+    .chip:hover { border-color: #10b981; color: #10b981; }
+    .chip.active { background: #10b981; color: #fff; border-color: #10b981; }
+</style>
 
 <!-- ═══ MODALS ═══ -->
 
