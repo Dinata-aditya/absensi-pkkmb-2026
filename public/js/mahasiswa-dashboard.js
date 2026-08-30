@@ -372,210 +372,80 @@ async function cekDanTampilkanSertifikat() {
 
 // ── Download sertifikat ──────────────────────────
 async function downloadSertifikat() {
+    const btn = document.querySelector('#sertifSection button');
+    if (btn) { btn.disabled = true; btn.textContent = 'Membuat sertifikat...'; }
+
     try {
-        // Ambil info event (sesi pertama untuk tanggal)
-        const { data: sessions } = await supabase
-            .from('attendance_sessions')
-            .select('tanggal, hari_ke')
-            .order('hari_ke');
+        // Ambil nomor urut mahasiswa berdasarkan urutan created_at
+        const { data: semuaMhs } = await supabase
+            .from('students')
+            .select('id')
+            .eq('status', 'ACTIVE')
+            .order('created_at');
 
-        const tglMulai = sessions?.[0]?.tanggal
-            ? new Date(sessions[0].tanggal).toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' })
-            : '-';
-        const tglAkhir = sessions?.length > 1
-            ? new Date(sessions[sessions.length-1].tanggal).toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' })
-            : tglMulai;
+        const nomorUrut = (semuaMhs || []).findIndex(m => m.id === studentData.id) + 1;
+        const nomorStr  = String(nomorUrut).padStart(3, '0'); // 001, 014, dst
+        const noSertif  = `${nomorStr}/PKKMB/09.2026`;
 
-        const nama     = studentData.nama_lengkap;
-        const nim      = studentData.nim;
-        const prodi    = studentData.study_programs?.nama || '-';
-        const fakultas = studentData.faculties?.nama || '-';
-        const nomorSertif = `PKKMB-2026-${nim}`;
+        const nama  = studentData.nama_lengkap.toUpperCase();
+        const nim   = studentData.nim;
+        const prodi = (studentData.study_programs?.nama || '-').toUpperCase();
 
-        // Buat window print
-        const w = window.open('', '', 'width=1000,height=720');
-        w.document.write(`<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<title>Sertifikat – ${nama}</title>
-<style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-        font-family: 'Times New Roman', Times, serif;
-        background: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        padding: 1rem;
-    }
-    .cert {
-        width: 297mm;
-        min-height: 210mm;
-        border: 12px double #10b981;
-        padding: 2.5rem 3rem;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-    .cert::before {
-        content: '';
-        position: absolute;
-        inset: 6px;
-        border: 2px solid #10b981;
-        pointer-events: none;
-    }
-    .logo-row {
-        display: flex;
-        justify-content: center;
-        gap: 2.5rem;
-        margin-bottom: 1.25rem;
-    }
-    .logo-row img {
-        height: 80px;
-        width: 80px;
-        object-fit: contain;
-    }
-    .univ-name {
-        font-size: 13pt;
-        font-weight: 700;
-        letter-spacing: .5px;
-        margin-bottom: .2rem;
-        color: #111;
-    }
-    .divider {
-        width: 80%;
-        border: none;
-        border-top: 2.5px solid #10b981;
-        margin: .75rem 0;
-    }
-    .cert-title {
-        font-size: 28pt;
-        font-weight: 700;
-        color: #10b981;
-        letter-spacing: 2px;
-        margin-bottom: .25rem;
-    }
-    .cert-subtitle {
-        font-size: 13pt;
-        color: #374151;
-        margin-bottom: 1.5rem;
-    }
-    .diberikan {
-        font-size: 11pt;
-        color: #6b7280;
-        margin-bottom: .5rem;
-    }
-    .nama-penerima {
-        font-size: 26pt;
-        font-weight: 700;
-        color: #111;
-        font-style: italic;
-        border-bottom: 2px solid #10b981;
-        padding-bottom: .3rem;
-        margin-bottom: .75rem;
-        min-width: 400px;
-    }
-    .info-row {
-        font-size: 11pt;
-        color: #374151;
-        margin-bottom: .3rem;
-    }
-    .info-row span { font-weight: 600; }
-    .body-text {
-        font-size: 11pt;
-        color: #374151;
-        max-width: 580px;
-        line-height: 1.6;
-        margin: 1rem 0 1.5rem;
-    }
-    .sign-row {
-        display: flex;
-        justify-content: space-between;
-        width: 100%;
-        margin-top: auto;
-        padding-top: 1.5rem;
-    }
-    .sign-box {
-        text-align: center;
-        min-width: 180px;
-    }
-    .sign-space { height: 55px; }
-    .sign-name {
-        font-size: 10pt;
-        color: #374151;
-        border-top: 1px solid #374151;
-        padding-top: .3rem;
-    }
-    .nomor {
-        font-size: 9pt;
-        color: #9ca3af;
-        margin-bottom: 1rem;
-    }
-    @media print {
-        body { padding: 0; }
-        .cert { width: 100%; min-height: 100vh; }
-    }
-</style>
-</head>
-<body>
-<div class="cert">
-    <div class="logo-row">
-        <img src="img/logo-univ.png" alt="Logo UPP" onerror="this.style.display='none'">
-        <img src="img/logo-pkkmb.png" alt="Logo PKKMB" onerror="this.style.display='none'">
-    </div>
+        // Load gambar template
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        await new Promise((resolve, reject) => {
+            img.onload  = resolve;
+            img.onerror = reject;
+            img.src = 'img/seritifikat.asli.png?' + Date.now();
+        });
 
-    <div class="univ-name">UNIVERSITAS PASIR PENGARAIAN</div>
-    <div style="font-size:10pt;color:#6b7280;margin-bottom:.5rem;">Panitia PKKMB 2026</div>
-    <hr class="divider">
+        // Buat canvas sesuai ukuran gambar
+        const canvas  = document.createElement('canvas');
+        canvas.width  = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        const W   = canvas.width;
+        const H   = canvas.height;
 
-    <div class="cert-title">SERTIFIKAT</div>
-    <div class="cert-subtitle">KEHADIRAN PKKMB 2026</div>
+        // Gambar template sebagai background
+        ctx.drawImage(img, 0, 0);
 
-    <div class="nomor">No: ${nomorSertif}</div>
+        // ── No. Sertifikat ──────────────────────────
+        // Posisi: tepat di bawah tulisan "SERTIFIKAT", ~37.5% dari atas
+        ctx.fillStyle = '#333333';
+        ctx.textAlign = 'center';
+        ctx.font      = `normal ${Math.round(W * 0.022)}px Arial`;
+        ctx.fillText(`No. ${noSertif}`, W / 2, Math.round(H * 0.375));
 
-    <div class="diberikan">Diberikan kepada:</div>
-    <div class="nama-penerima">${nama}</div>
+        // ── Nama Mahasiswa ──────────────────────────
+        // Posisi: area kosong besar ~50% dari atas
+        ctx.fillStyle = '#111111';
+        ctx.font      = `bold ${Math.round(W * 0.052)}px Arial`;
+        ctx.fillText(nama, W / 2, Math.round(H * 0.505));
 
-    <div class="info-row">NIM: <span>${nim}</span></div>
-    <div class="info-row">Program Studi: <span>${prodi}</span></div>
-    <div class="info-row">Fakultas: <span>${fakultas}</span></div>
+        // ── NIM ─────────────────────────────────────
+        // Posisi: ~58.5% dari atas
+        ctx.fillStyle = '#222222';
+        ctx.font      = `normal ${Math.round(W * 0.026)}px Arial`;
+        ctx.fillText(`NIM : ${nim}`, W / 2, Math.round(H * 0.585));
 
-    <div class="body-text">
-        Telah mengikuti seluruh rangkaian kegiatan
-        <strong>Pengenalan Kehidupan Kampus Mahasiswa Baru (PKKMB) 2026</strong>
-        Universitas Pasir Pengaraian yang dilaksanakan pada
-        <strong>${tglMulai} – ${tglAkhir}</strong>
-        dengan kehadiran penuh.
-    </div>
+        // ── Prodi ───────────────────────────────────
+        // Posisi: ~62% dari atas
+        ctx.font = `normal ${Math.round(W * 0.026)}px Arial`;
+        ctx.fillText(`PRODI : ${prodi}`, W / 2, Math.round(H * 0.625));
 
-    <div class="sign-row">
-        <div class="sign-box">
-            <div style="font-size:10pt;color:#6b7280;margin-bottom:.3rem;">Pasir Pengaraian, ${tglAkhir}</div>
-            <div style="font-size:10pt;color:#374151;margin-bottom:.3rem;">Ketua Panitia PKKMB 2026</div>
-            <div class="sign-space"></div>
-            <div class="sign-name">( _________________________ )</div>
-        </div>
-        <div class="sign-box">
-            <div style="font-size:10pt;color:#6b7280;margin-bottom:.3rem;">Mengetahui,</div>
-            <div style="font-size:10pt;color:#374151;margin-bottom:.3rem;">Wakil Rektor Bidang Kemahasiswaan</div>
-            <div class="sign-space"></div>
-            <div class="sign-name">( _________________________ )</div>
-        </div>
-    </div>
-</div>
-</body>
-</html>`);
-
-        w.document.close();
-        w.focus();
-        setTimeout(() => { w.print(); }, 500);
+        // Download sebagai PNG
+        const link    = document.createElement('a');
+        link.download = `Sertifikat_PKKMB_${nim}.png`;
+        link.href     = canvas.toDataURL('image/png', 1.0);
+        link.click();
 
     } catch (err) {
         console.error('Download sertifikat error:', err);
-        alert('Gagal membuka sertifikat: ' + err.message);
+        alert('Gagal membuat sertifikat: ' + err.message);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Download Sertifikat'; }
     }
 }
+
