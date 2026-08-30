@@ -412,16 +412,16 @@ async function downloadSertifikat() {
         // ── Nama Mahasiswa ──────────────────────────
         ctx.fillStyle = '#111111';
         ctx.font      = `bold ${Math.round(W * 0.048)}px Arial`;
-        ctx.fillText(nama, W / 2, Math.round(H * 0.525));
+        ctx.fillText(nama, W / 2, Math.round(H * 0.565));
 
         // ── NIM ─────────────────────────────────────
         ctx.fillStyle = '#222222';
         ctx.font      = `normal ${Math.round(W * 0.022)}px Arial`;
-        ctx.fillText(`NIM : ${nim}`, W / 2, Math.round(H * 0.605));
+        ctx.fillText(`NIM : ${nim}`, W / 2, Math.round(H * 0.635));
 
         // ── Prodi ───────────────────────────────────
         ctx.font = `normal ${Math.round(W * 0.022)}px Arial`;
-        ctx.fillText(`PRODI : ${prodi}`, W / 2, Math.round(H * 0.645));
+        ctx.fillText(`PRODI : ${prodi}`, W / 2, Math.round(H * 0.672));
 
         // Download sebagai PNG
         const link    = document.createElement('a');
