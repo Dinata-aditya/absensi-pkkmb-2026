@@ -404,28 +404,24 @@ async function downloadSertifikat() {
         ctx.drawImage(img, 0, 0);
 
         // ── No. Sertifikat ──────────────────────────
-        // Posisi: tepat di bawah tulisan "SERTIFIKAT", ~37.5% dari atas
         ctx.fillStyle = '#333333';
         ctx.textAlign = 'center';
         ctx.font      = `normal ${Math.round(W * 0.022)}px Arial`;
-        ctx.fillText(`No. ${noSertif}`, W / 2, Math.round(H * 0.375));
+        ctx.fillText(`No. ${noSertif}`, W / 2, Math.round(H * 0.42));
 
         // ── Nama Mahasiswa ──────────────────────────
-        // Posisi: area kosong besar ~50% dari atas
         ctx.fillStyle = '#111111';
         ctx.font      = `bold ${Math.round(W * 0.052)}px Arial`;
-        ctx.fillText(nama, W / 2, Math.round(H * 0.505));
+        ctx.fillText(nama, W / 2, Math.round(H * 0.555));
 
         // ── NIM ─────────────────────────────────────
-        // Posisi: ~58.5% dari atas
         ctx.fillStyle = '#222222';
         ctx.font      = `normal ${Math.round(W * 0.026)}px Arial`;
-        ctx.fillText(`NIM : ${nim}`, W / 2, Math.round(H * 0.585));
+        ctx.fillText(`NIM : ${nim}`, W / 2, Math.round(H * 0.635));
 
         // ── Prodi ───────────────────────────────────
-        // Posisi: ~62% dari atas
         ctx.font = `normal ${Math.round(W * 0.026)}px Arial`;
-        ctx.fillText(`PRODI : ${prodi}`, W / 2, Math.round(H * 0.625));
+        ctx.fillText(`PRODI : ${prodi}`, W / 2, Math.round(H * 0.675));
 
         // Download sebagai PNG
         const link    = document.createElement('a');
