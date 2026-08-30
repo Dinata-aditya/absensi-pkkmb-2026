@@ -376,20 +376,12 @@ async function downloadSertifikat() {
     if (btn) { btn.disabled = true; btn.textContent = 'Membuat sertifikat...'; }
 
     try {
-        // Ambil nomor urut mahasiswa berdasarkan urutan created_at
-        const { data: semuaMhs } = await supabase
-            .from('students')
-            .select('id')
-            .eq('status', 'ACTIVE')
-            .order('created_at');
-
-        const nomorUrut = (semuaMhs || []).findIndex(m => m.id === studentData.id) + 1;
-        const nomorStr  = String(nomorUrut).padStart(3, '0'); // 001, 014, dst
-        const noSertif  = `${nomorStr}/PKKMB/09.2026`;
-
         const nama  = studentData.nama_lengkap.toUpperCase();
         const nim   = studentData.nim;
         const prodi = (studentData.study_programs?.nama || '-').toUpperCase();
+
+        // No seri: 3 digit terakhir NIM, misal 2636062 → 062/PKKMB/09.2026
+        const noSertif = `${nim.slice(-3)}/PKKMB/09.2026`;
 
         // Load gambar template
         const img = new Image();
