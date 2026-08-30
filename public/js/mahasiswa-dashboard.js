@@ -246,6 +246,15 @@ console.log('✓ Mahasiswa dashboard loaded');
 
 async function cekDanTampilkanSertifikat() {
     try {
+        // Cek setting sertifikat_aktif dari admin
+        const { data: setting } = await supabase
+            .from('settings')
+            .select('value')
+            .eq('key', 'sertifikat_aktif')
+            .single();
+
+        const sertifAktif = setting?.value === 'true';
+
         // Ambil semua sesi
         const { data: sessions } = await supabase
             .from('attendance_sessions')
@@ -271,24 +280,46 @@ async function cekDanTampilkanSertifikat() {
             if (hadirSet.has(s.id)) hadirPerHari[s.hari_ke]++;
         });
 
-        // Ambil semua hari yang PUNYA sesi
+        // Semua hari yang punya sesi
         const semuaHari = [...new Set(sessions.map(s => s.hari_ke))].sort();
 
-        // Syarat: hadir minimal 2 sesi di SETIAP hari yang ada
+        // Syarat: hadir minimal 2 sesi di SETIAP hari
         const layak = semuaHari.length >= 2 &&
             semuaHari.every(h => (hadirPerHari[h] || 0) >= 2);
 
-        // Hitung progress untuk info mahasiswa
-        const totalHari    = semuaHari.length;
-        const hariLolos    = semuaHari.filter(h => (hadirPerHari[h] || 0) >= 2).length;
+        const totalHari = semuaHari.length;
+        const hariLolos = semuaHari.filter(h => (hadirPerHari[h] || 0) >= 2).length;
+        const deskripsi = semuaHari.map(h =>
+            `Hari ${h}: ${hadirPerHari[h] || 0}/2 sesi`
+        ).join(' &nbsp;|&nbsp; ');
 
-        // Tampilkan section sertifikat
+        // Sisipkan kartu sertifikat setelah kartu riwayat absensi
         const container = document.getElementById('attendanceHistory').closest('.card');
         const sertifSection = document.createElement('div');
         sertifSection.className = 'card';
         sertifSection.id = 'sertifSection';
 
-        if (layak) {
+        if (!sertifAktif) {
+            // Sertifikat belum diaktifkan admin — tampilkan info saja
+            sertifSection.innerHTML = `
+                <div class="card-header">
+                    <h3 class="card-title">Sertifikat Kehadiran</h3>
+                </div>
+                <div class="card-body" style="text-align:center;padding:2rem;">
+                    <div style="width:72px;height:72px;background:#f3f4f6;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+                        </svg>
+                    </div>
+                    <h3 style="margin-bottom:.5rem;color:#6b7280;">Sertifikat Belum Dibuka</h3>
+                    <p style="color:#9ca3af;font-size:.875rem;">
+                        Sertifikat akan tersedia setelah panitia mengaktifkan fitur ini.<br>
+                        Silakan cek kembali setelah PKKMB selesai.
+                    </p>
+                </div>
+            `;
+        } else if (layak) {
+            // Layak dan sertifikat sudah diaktifkan
             sertifSection.innerHTML = `
                 <div class="card-header">
                     <h3 class="card-title">Sertifikat Kehadiran</h3>
@@ -300,7 +331,7 @@ async function cekDanTampilkanSertifikat() {
                         </svg>
                     </div>
                     <h3 style="margin-bottom:.5rem;color:#065f46;">Selamat! Anda Berhak Mendapat Sertifikat</h3>
-                    <p style="color:#6b7280;font-size:.9rem;margin-bottom:1.5rem;">
+                    <p style="color:#6b7280;font-size:.875rem;margin-bottom:1.5rem;">
                         Anda telah hadir di semua hari kegiatan PKKMB 2026.
                     </p>
                     <button class="btn btn-primary btn-lg" onclick="downloadSertifikat()">
@@ -309,10 +340,7 @@ async function cekDanTampilkanSertifikat() {
                 </div>
             `;
         } else {
-            const deskripsi = semuaHari.map(h =>
-                `Hari ${h}: ${hadirPerHari[h] || 0}/2 sesi`
-            ).join(' &nbsp;|&nbsp; ');
-
+            // Tidak layak meski sertifikat sudah diaktifkan
             sertifSection.innerHTML = `
                 <div class="card-header">
                     <h3 class="card-title">Sertifikat Kehadiran</h3>
@@ -323,13 +351,11 @@ async function cekDanTampilkanSertifikat() {
                             <circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
                         </svg>
                     </div>
-                    <h3 style="margin-bottom:.5rem;color:#92400e;">Sertifikat Belum Tersedia</h3>
-                    <p style="color:#6b7280;font-size:.9rem;margin-bottom:.75rem;">
+                    <h3 style="margin-bottom:.5rem;color:#92400e;">Sertifikat Tidak Tersedia</h3>
+                    <p style="color:#6b7280;font-size:.875rem;margin-bottom:.75rem;">
                         Sertifikat diberikan jika hadir minimal 2 sesi di setiap hari kegiatan.
                     </p>
-                    <p style="font-size:.875rem;color:#374151;">
-                        ${deskripsi}
-                    </p>
+                    <p style="font-size:.875rem;color:#374151;">${deskripsi}</p>
                     <p style="font-size:.8125rem;color:#9ca3af;margin-top:.5rem;">
                         Progress: ${hariLolos}/${totalHari} hari terpenuhi
                     </p>
@@ -337,7 +363,6 @@ async function cekDanTampilkanSertifikat() {
             `;
         }
 
-        // Sisipkan setelah kartu riwayat absensi
         container.insertAdjacentElement('afterend', sertifSection);
 
     } catch (err) {

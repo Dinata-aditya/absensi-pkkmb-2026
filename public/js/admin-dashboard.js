@@ -23,6 +23,7 @@ async function loadAll() {
         loadSessions()
     ]);
     loadStatistik();
+    loadSertifSetting();
 }
 
 // ── Loaders ──────────────────────────────────────
@@ -993,4 +994,67 @@ async function cetakLembarAbsensi() {
         btn.disabled = false;
         btn.textContent = 'Cetak Lembar Absensi';
     }
+}
+
+
+// ═════════════════════════════════════════════════
+// TOGGLE SERTIFIKAT
+// ═════════════════════════════════════════════════
+
+let sertifikatAktif = false;
+
+async function loadSertifSetting() {
+    const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'sertifikat_aktif')
+        .single();
+
+    sertifikatAktif = data?.value === 'true';
+    renderToggleSertif();
+}
+
+function renderToggleSertif() {
+    const btn  = document.getElementById('btnToggleSertif');
+    const info = document.getElementById('sertifStatusText');
+    if (!btn || !info) return;
+
+    btn.disabled = false;
+
+    if (sertifikatAktif) {
+        btn.textContent    = 'Nonaktifkan Sertifikat';
+        btn.className      = 'btn btn-danger';
+        info.innerHTML     = '<span style="color:#10b981;font-weight:600;">● Aktif</span> — Mahasiswa yang memenuhi syarat sudah bisa download sertifikat';
+    } else {
+        btn.textContent    = 'Aktifkan Sertifikat';
+        btn.className      = 'btn btn-primary';
+        info.innerHTML     = '<span style="color:#9ca3af;font-weight:600;">● Nonaktif</span> — Sertifikat belum bisa diakses mahasiswa';
+    }
+}
+
+async function toggleSertifikat() {
+    const btn = document.getElementById('btnToggleSertif');
+    const newVal = !sertifikatAktif;
+    const konfirmasi = newVal
+        ? 'Aktifkan sertifikat? Mahasiswa yang memenuhi syarat akan bisa download sertifikat sekarang.'
+        : 'Nonaktifkan sertifikat? Tombol download akan disembunyikan dari semua mahasiswa.';
+
+    if (!confirm(konfirmasi)) return;
+
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    const { error } = await supabase
+        .from('settings')
+        .upsert({ key: 'sertifikat_aktif', value: String(newVal), updated_at: new Date().toISOString() });
+
+    if (error) {
+        alert('Gagal menyimpan: ' + error.message);
+        btn.disabled = false;
+        renderToggleSertif();
+        return;
+    }
+
+    sertifikatAktif = newVal;
+    renderToggleSertif();
 }
