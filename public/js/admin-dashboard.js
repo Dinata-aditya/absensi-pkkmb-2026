@@ -427,7 +427,7 @@ function renderSessionsGrid() {
             <div class="session-card-body">
                 <div class="row"><span>Hari ke-${s.hari_ke}</span></div>
                 <div class="row"><span>${fmtDate(s.tanggal)}</span></div>
-                <div class="row"><span>Mulai: ${s.jam_mulai}</span></div>
+                <div class="row"><span>Mulai: ${s.jam_mulai ? s.jam_mulai.slice(0,5) : '-'}</span></div>
             </div>
             <div class="session-card-foot">
                 <button class="btn btn-outline btn-sm" onclick="lihatQR('${s.id}')">QR Code</button>
@@ -766,7 +766,7 @@ async function cetakLembarAbsensi() {
         const tglLong  = new Date(session.tanggal).toLocaleDateString('id-ID', {
             weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
         });
-        const waktu = `${session.jam_mulai}`;
+        const waktu = `${session.jam_mulai ? session.jam_mulai.slice(0,5) : '-'}`;
 
         // Bangun halaman HTML untuk setiap prodi
         let pages = '';
