@@ -427,7 +427,7 @@ function renderSessionsGrid() {
             <div class="session-card-body">
                 <div class="row"><span>Hari ke-${s.hari_ke}</span></div>
                 <div class="row"><span>${fmtDate(s.tanggal)}</span></div>
-                <div class="row"><span>${s.jam_mulai} – ${s.jam_selesai}</span></div>
+                <div class="row"><span>Mulai: ${s.jam_mulai}</span></div>
             </div>
             <div class="session-card-foot">
                 <button class="btn btn-outline btn-sm" onclick="lihatQR('${s.id}')">QR Code</button>
@@ -460,7 +460,6 @@ async function buatSesi() {
     const hari    = document.getElementById('snHari').value;
     const tanggal = document.getElementById('snTanggal').value;
     const mulai   = document.getElementById('snMulai').value;
-    const selesai = document.getElementById('snSelesai').value;
 
     if (!nama || !tanggal) { alert('Nama kegiatan dan tanggal wajib diisi'); return; }
 
@@ -470,7 +469,9 @@ async function buatSesi() {
     const { error } = await supabase.from('attendance_sessions').insert({
         nama_kegiatan: nama,
         hari_ke: parseInt(hari),
-        tanggal, jam_mulai: mulai, jam_selesai: selesai,
+        tanggal,
+        jam_mulai: mulai,
+        jam_selesai: mulai,   // sama dengan mulai, kolom wajib di DB
         qr_token: generateUUID(),
         status: 'SCHEDULED'
     });
@@ -514,7 +515,6 @@ function bukaEditSesi(id) {
     document.getElementById('esHari').value    = s.hari_ke;
     document.getElementById('esTanggal').value = s.tanggal;
     document.getElementById('esMulai').value   = s.jam_mulai;
-    document.getElementById('esSelesai').value = s.jam_selesai;
     openModal('modalEditSesi');
 }
 
@@ -524,13 +524,12 @@ async function simpanEditSesi() {
     const hari    = parseInt(document.getElementById('esHari').value);
     const tanggal = document.getElementById('esTanggal').value;
     const mulai   = document.getElementById('esMulai').value;
-    const selesai = document.getElementById('esSelesai').value;
 
     const btn = document.getElementById('btnSimpanSesi');
     btn.disabled = true;
 
     const { error } = await supabase.from('attendance_sessions')
-        .update({ nama_kegiatan: nama, hari_ke: hari, tanggal, jam_mulai: mulai, jam_selesai: selesai })
+        .update({ nama_kegiatan: nama, hari_ke: hari, tanggal, jam_mulai: mulai, jam_selesai: mulai })
         .eq('id', id);
 
     btn.disabled = false;
@@ -767,7 +766,7 @@ async function cetakLembarAbsensi() {
         const tglLong  = new Date(session.tanggal).toLocaleDateString('id-ID', {
             weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
         });
-        const waktu = `${session.jam_mulai} s/d ${session.jam_selesai}`;
+        const waktu = `${session.jam_mulai}`;
 
         // Bangun halaman HTML untuk setiap prodi
         let pages = '';
