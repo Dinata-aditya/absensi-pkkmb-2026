@@ -18,11 +18,11 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     document.querySelectorAll('.form-input').forEach(el => el.classList.remove('error'));
     document.getElementById('alertContainer').innerHTML = '';
 
-    const nim      = document.getElementById('nim').value.trim();
-    const password = document.getElementById('password').value;
+    const nimOrEmail = document.getElementById('nim').value.trim();
+    const password   = document.getElementById('password').value;
 
-    if (!nim) {
-        showFieldError('nim', 'NIM wajib diisi');
+    if (!nimOrEmail) {
+        showFieldError('nim', 'NIM atau Email wajib diisi');
         return;
     }
     if (!password) {
@@ -31,62 +31,48 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     }
 
     // Show loading
-    const submitBtn    = document.getElementById('submitBtn');
-    const submitText   = document.getElementById('submitText');
+    const submitBtn     = document.getElementById('submitBtn');
+    const submitText    = document.getElementById('submitText');
     const submitSpinner = document.getElementById('submitSpinner');
-    submitBtn.disabled = true;
-    submitText.style.display = 'none';
+    submitBtn.disabled  = true;
+    submitText.style.display  = 'none';
     submitSpinner.style.display = 'inline-block';
 
     try {
-        // Step 1: Cari email berdasarkan NIM
-        const { data: studentData, error: studentError } = await supabase
-            .from('students')
-            .select('user_id, nim, status')
-            .eq('nim', nim)
-            .single();
+        let email = '';
 
-        if (studentError || !studentData) {
-            throw new Error('NIM tidak ditemukan. Pastikan NIM yang Anda masukkan benar.');
+        // Deteksi: kalau ada @ berarti email (admin), kalau tidak berarti NIM (mahasiswa)
+        const isEmail = nimOrEmail.includes('@');
+
+        if (isEmail) {
+            // Admin login langsung pakai email
+            email = nimOrEmail;
+        } else {
+            // Mahasiswa — cari email berdasarkan NIM
+            const { data: emailData, error: nimError } = await supabase
+                .rpc('get_email_by_nim', { p_nim: nimOrEmail });
+
+            if (nimError || !emailData) {
+                throw new Error('NIM tidak ditemukan. Pastikan NIM yang Anda masukkan benar.');
+            }
+            email = emailData;
         }
 
-        // Ambil email dari auth.users via user_id — pakai tabel students join users
-        const { data: userData, error: userError } = await supabase
-            .from('students')
-            .select(`
-                nim,
-                status,
-                user_id
-            `)
-            .eq('nim', nim)
-            .single();
-
-        if (userError) throw new Error('Gagal mengambil data pengguna');
-
-        // Ambil email lewat RPC (karena auth.users tidak bisa diakses langsung)
-        const { data: emailData, error: emailError } = await supabase
-            .rpc('get_email_by_nim', { p_nim: nim });
-
-        if (emailError || !emailData) {
-            throw new Error('Gagal mengambil data akun. Hubungi panitia.');
-        }
-
-        // Step 2: Login dengan email + password
+        // Login dengan email + password
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-            email: emailData,
-            password: password
+            email,
+            password
         });
 
         if (authError) {
             if (authError.message.includes('Invalid login credentials')) {
-                throw new Error('NIM atau password salah');
+                throw new Error(isEmail ? 'Email atau password salah' : 'NIM atau password salah');
             }
             throw authError;
         }
 
         if (!authData.user) throw new Error('Login gagal. Silakan coba lagi.');
 
-        // Get role
         const role = await getUserRole(authData.user.id);
         if (!role) throw new Error('Role pengguna tidak ditemukan. Hubungi administrator.');
 
