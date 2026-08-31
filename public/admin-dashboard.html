@@ -297,12 +297,6 @@
     <div class="filter-row">
         <select id="fFakultas" onchange="filterMahasiswa()"><option value="">Semua Fakultas</option></select>
         <select id="fProdi"    onchange="filterMahasiswa()"><option value="">Semua Prodi</option></select>
-        <select id="fStatus"   onchange="filterMahasiswa()">
-            <option value="">Semua Status</option>
-            <option value="ACTIVE">Aktif</option>
-            <option value="PENDING">Pending</option>
-            <option value="INACTIVE">Tidak Aktif</option>
-        </select>
         <input id="fCari" type="text" placeholder="Cari NIM / Nama…" oninput="filterMahasiswa()">
     </div>
     <div class="tbl-wrap">
@@ -313,7 +307,6 @@
                     <th>Nama</th>
                     <th>Fakultas</th>
                     <th>Prodi</th>
-                    <th>Status</th>
                     <th></th>
                 </tr>
             </thead>

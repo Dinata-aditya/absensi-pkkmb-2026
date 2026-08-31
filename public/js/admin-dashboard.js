@@ -176,13 +176,11 @@ function populateProdiFilter() {
 function filterMahasiswa() {
     const fak    = document.getElementById('fFakultas').value;
     const prodi  = document.getElementById('fProdi').value;
-    const status = document.getElementById('fStatus').value;
     const cari   = document.getElementById('fCari').value.toLowerCase();
 
     filteredStudents = allStudents.filter(s => {
         if (fak    && s.fakultas_id !== fak)    return false;
         if (prodi  && s.prodi_id    !== prodi)   return false;
-        if (status && s.status      !== status)  return false;
         if (cari   && !s.nim.toLowerCase().includes(cari) && !s.nama_lengkap.toLowerCase().includes(cari)) return false;
         return true;
     });
@@ -204,7 +202,6 @@ function renderMahasiswaTable() {
             <td>${s.nama_lengkap}</td>
             <td>${s.faculties?.nama || '-'}</td>
             <td>${s.study_programs?.nama || '-'}</td>
-            <td>${statusBadge(s.status)}</td>
             <td>
                 <button class="btn btn-ghost btn-sm" onclick="bukaModalStatusMhs('${s.id}')">Ubah Status</button>
                 <button class="btn btn-ghost btn-sm" onclick="bukaModalResetPassword('${s.id}')">Reset Password</button>
