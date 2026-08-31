@@ -912,8 +912,8 @@ async function cetakLembarAbsensi() {
             <div class="page-break">
                 <div class="header">
                     <div class="logo-row">
-                        <img src="img/logo-univ.png" class="logo" onerror="this.style.display='none'" alt="">
-                        <img src="img/logo-pkkmb.png" class="logo" onerror="this.style.display='none'" alt="">
+                        <img src="img/logouniv.png" class="logo" onerror="this.style.display='none'" alt="">
+                        <img src="img/logopkkmb.png" class="logo" onerror="this.style.display='none'" alt="">
                     </div>
                     <h1>ABSENSI KEHADIRAN</h1>
                     <h2>PKKMB UNIVERSITAS PASIR PENGARAIAN 2026</h2>
