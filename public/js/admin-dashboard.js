@@ -207,6 +207,7 @@ function renderMahasiswaTable() {
             <td>${statusBadge(s.status)}</td>
             <td>
                 <button class="btn btn-ghost btn-sm" onclick="bukaModalStatusMhs('${s.id}')">Ubah Status</button>
+                <button class="btn btn-ghost btn-sm" onclick="bukaModalResetPassword('${s.id}')">Reset Password</button>
             </td>
         </tr>
     `).join('');
@@ -1057,4 +1058,66 @@ async function toggleSertifikat() {
 
     sertifikatAktif = newVal;
     renderToggleSertif();
+}
+
+
+// ═════════════════════════════════════════════════
+// RESET PASSWORD MAHASISWA
+// ═════════════════════════════════════════════════
+
+let resetTargetStudent = null;
+
+function bukaModalResetPassword(studentId) {
+    resetTargetStudent = allStudents.find(s => s.id === studentId);
+    if (!resetTargetStudent) return;
+
+    document.getElementById('resetPwInfoBox').innerHTML = `
+        <div><strong>${resetTargetStudent.nama_lengkap}</strong></div>
+        <div style="color:#6b7280">NIM ${resetTargetStudent.nim} &middot; ${resetTargetStudent.study_programs?.nama || '-'}</div>
+    `;
+    document.getElementById('resetPwBaru').value = '';
+    document.getElementById('resetPwKonfirm').value = '';
+    openModal('modalResetPassword');
+}
+
+async function simpanResetPassword() {
+    const pwBaru    = document.getElementById('resetPwBaru').value;
+    const pwKonfirm = document.getElementById('resetPwKonfirm').value;
+
+    if (!pwBaru) {
+        alert('Password baru wajib diisi');
+        return;
+    }
+    if (pwBaru.length < 6) {
+        alert('Password minimal 6 karakter');
+        return;
+    }
+    if (pwBaru !== pwKonfirm) {
+        alert('Konfirmasi password tidak cocok');
+        return;
+    }
+
+    const btn = document.getElementById('btnResetPw');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    try {
+        // Pakai Supabase Admin API via RPC untuk update password
+        const { error } = await supabase.rpc('admin_reset_password', {
+            p_user_id: resetTargetStudent.user_id,
+            p_new_password: pwBaru
+        });
+
+        if (error) throw error;
+
+        alert(`✅ Password ${resetTargetStudent.nama_lengkap} berhasil direset!`);
+        closeModal('modalResetPassword');
+
+    } catch (err) {
+        console.error('Reset password error:', err);
+        alert('Gagal reset password: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Reset Password';
+    }
 }
