@@ -244,8 +244,9 @@ async function cekDanTampilkanSertifikat() {
             `Hari ${h}: ${hadirPerHari[h] || 0}/2 sesi`
         ).join(' &nbsp;|&nbsp; ');
 
-        // Sisipkan kartu sertifikat setelah kartu riwayat absensi
-        const container = document.getElementById('attendanceHistory').closest('.card');
+        // Sisipkan kartu sertifikat ke dashboard-grid setelah kartu riwayat absensi
+        const attCard = document.getElementById('attendanceHistory').closest('.card');
+        const grid    = attCard.closest('.dashboard-grid');
 
         // Hapus section sertifikat lama kalau ada
         const existing = document.getElementById('sertifSection');
@@ -319,7 +320,8 @@ async function cekDanTampilkanSertifikat() {
             `;
         }
 
-        container.insertAdjacentElement('afterend', sertifSection);
+        // Tambahkan ke grid
+        grid.appendChild(sertifSection);
 
     } catch (err) {
         console.error('Cek sertifikat error:', err);
