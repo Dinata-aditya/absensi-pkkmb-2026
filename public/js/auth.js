@@ -149,16 +149,6 @@ async function logout() {
  * @param {string} message - Error message to display
  */
 function showError(message) {
-    // This will be enhanced in later tasks with toast notifications
-    alert(message);
-}
-
-/**
- * Show success message (utility)
- * @param {string} message - Success message to display
- */
-function showSuccess(message) {
-    // This will be enhanced in later tasks with toast notifications
     alert(message);
 }
 

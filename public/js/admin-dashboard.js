@@ -16,7 +16,7 @@ let currentSession = null;
 })();
 
 async function loadAll() {
-    const [facErr, proErr, stuErr, sesErr] = await Promise.all([
+    await Promise.all([
         loadFaculties(),
         loadProdi(),
         loadStudents(),

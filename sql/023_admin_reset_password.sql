@@ -1,7 +1,6 @@
 -- ====================================
 -- RPC: admin_reset_password
 -- Dipanggil dari admin dashboard untuk reset password mahasiswa
--- Hanya bisa dijalankan dengan service_role key
 -- ====================================
 
 CREATE OR REPLACE FUNCTION public.admin_reset_password(
@@ -10,7 +9,7 @@ CREATE OR REPLACE FUNCTION public.admin_reset_password(
 )
 RETURNS JSONB
 LANGUAGE plpgsql
-SECURITY DEFINER  -- Berjalan dengan hak akses owner (postgres)
+SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
@@ -36,9 +35,3 @@ EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('success', false, 'message', SQLERRM);
 END;
 $$;
-
--- Test
-SELECT public.admin_reset_password(
-    (SELECT id FROM auth.users LIMIT 1),
-    'test123456'
-);
