@@ -121,7 +121,7 @@ function validateForm() {
         showFieldError('password', 'Password wajib diisi');
         isValid = false;
     } else if (password.length < 6) {
-        showFieldError('password', 'Password minimal 6 karakter (ketentuan Supabase)');
+        showFieldError('password', 'Password minimal 6 karakter');
         isValid = false;
     }
     
