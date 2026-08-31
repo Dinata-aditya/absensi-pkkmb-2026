@@ -198,13 +198,17 @@ console.log('✓ Mahasiswa dashboard loaded');
 async function cekDanTampilkanSertifikat() {
     try {
         // Cek setting sertifikat_aktif dari admin
-        const { data: setting } = await supabase
-            .from('settings')
-            .select('value')
-            .eq('key', 'sertifikat_aktif')
-            .single();
-
-        const sertifAktif = setting?.value === 'true';
+        let sertifAktif = false;
+        try {
+            const { data: setting } = await supabase
+                .from('settings')
+                .select('value')
+                .eq('key', 'sertifikat_aktif')
+                .single();
+            sertifAktif = setting?.value === 'true';
+        } catch (e) {
+            console.warn('Settings table not found, defaulting sertifAktif to false');
+        }
 
         // Ambil semua sesi
         const { data: sessions } = await supabase
@@ -246,7 +250,12 @@ async function cekDanTampilkanSertifikat() {
 
         // Sisipkan kartu sertifikat ke dashboard-grid setelah kartu riwayat absensi
         const attCard = document.getElementById('attendanceHistory').closest('.card');
-        const grid    = attCard.closest('.dashboard-grid');
+        const grid    = attCard?.closest('.dashboard-grid') || document.querySelector('.dashboard-grid');
+
+        if (!grid) {
+            console.error('dashboard-grid not found');
+            return;
+        }
 
         // Hapus section sertifikat lama kalau ada
         const existing = document.getElementById('sertifSection');
