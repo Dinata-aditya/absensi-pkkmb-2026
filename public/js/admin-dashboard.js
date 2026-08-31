@@ -203,6 +203,7 @@ function renderMahasiswaTable() {
             <td>${s.faculties?.nama || '-'}</td>
             <td>${s.study_programs?.nama || '-'}</td>
             <td>
+                <button class="btn btn-ghost btn-sm" onclick="bukaModalTandaiHadir('${s.id}','${s.nim}','${s.nama_lengkap}')">Tandai Hadir</button>
                 <button class="btn btn-ghost btn-sm" onclick="bukaModalStatusMhs('${s.id}')">Ubah Status</button>
                 <button class="btn btn-ghost btn-sm" onclick="bukaModalResetPassword('${s.id}')">Reset Password</button>
             </td>
@@ -1116,5 +1117,92 @@ async function simpanResetPassword() {
     } finally {
         btn.disabled = false;
         btn.textContent = 'Reset Password';
+    }
+}
+
+
+// ═════════════════════════════════════════════════
+// TANDAI HADIR MANUAL DARI TAB MAHASISWA
+// ═════════════════════════════════════════════════
+
+let tandaiHadirStudentId = null;
+
+function bukaModalTandaiHadir(studentId, nim, nama) {
+    tandaiHadirStudentId = studentId;
+
+    document.getElementById('tandaiHadirInfo').innerHTML = `
+        <div><strong>${nama}</strong></div>
+        <div style="color:#6b7280">NIM: ${nim}</div>
+    `;
+
+    // Isi dropdown sesi — hanya sesi yang OPEN atau SCHEDULED
+    const sel = document.getElementById('tandaiHadirSesi');
+    sel.innerHTML = '<option value="">-- Pilih Sesi --</option>';
+
+    const sesiTersedia = allSessions.filter(s => s.status === 'OPEN' || s.status === 'SCHEDULED');
+
+    if (sesiTersedia.length === 0) {
+        sel.innerHTML = '<option value="">Tidak ada sesi yang tersedia</option>';
+    } else {
+        sesiTersedia.forEach(s => {
+            sel.innerHTML += `<option value="${s.id}">${s.nama_kegiatan} - Hari ${s.hari_ke} (${s.status})</option>`;
+        });
+    }
+
+    openModal('modalTandaiHadir');
+}
+
+async function simpanTandaiHadir() {
+    const sessionId = document.getElementById('tandaiHadirSesi').value;
+
+    if (!sessionId) {
+        alert('Pilih sesi terlebih dahulu');
+        return;
+    }
+
+    const btn = document.getElementById('btnTandaiHadir');
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+
+    try {
+        // Cek apakah sudah ada record absensi untuk mahasiswa ini di sesi ini
+        const { data: existing } = await supabase
+            .from('attendances')
+            .select('id, status')
+            .eq('student_id', tandaiHadirStudentId)
+            .eq('session_id', sessionId)
+            .single();
+
+        if (existing) {
+            // Update record yang ada
+            const { error } = await supabase
+                .from('attendances')
+                .update({ status: 'HADIR', scan_time: new Date().toISOString() })
+                .eq('id', existing.id);
+
+            if (error) throw error;
+        } else {
+            // Insert record baru
+            const { error } = await supabase
+                .from('attendances')
+                .insert({
+                    student_id: tandaiHadirStudentId,
+                    session_id: sessionId,
+                    status: 'HADIR',
+                    scan_time: new Date().toISOString()
+                });
+
+            if (error) throw error;
+        }
+
+        alert('✅ Mahasiswa berhasil ditandai HADIR!');
+        closeModal('modalTandaiHadir');
+        await loadStatistik();
+
+    } catch (err) {
+        alert('Gagal: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Tandai Hadir';
     }
 }
