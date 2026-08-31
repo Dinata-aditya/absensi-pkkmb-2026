@@ -15,6 +15,23 @@
             background-color: #10b981;
         }
 
+        .logo-top {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .logo-top img {
+            width: 64px;
+            height: 64px;
+            object-fit: contain;
+            background: white;
+            border-radius: 50%;
+            padding: 4px;
+        }
+
         .landing-card {
             background: var(--white);
             border-radius: var(--radius-xl);
@@ -25,44 +42,29 @@
         }
 
         .card-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
             margin-bottom: 1.5rem;
         }
 
-        .card-header-title {
-            flex: 1;
-            padding-right: 1rem;
-        }
-
-        .card-header img {
-            width: 72px;
-            height: 72px;
-            object-fit: contain;
-            flex-shrink: 0;
-        }
-
         .landing-title {
-            font-size: 1.25rem;
+            font-size: 1.375rem;
             font-weight: 700;
             color: var(--gray-900);
             margin-bottom: 0.25rem;
-            text-align: left;
+            text-align: center;
         }
 
         .landing-subtitle {
-            font-size: 0.8125rem;
+            font-size: 0.875rem;
             color: var(--gray-500);
             margin-bottom: 0.2rem;
-            text-align: left;
+            text-align: center;
         }
 
         .landing-univ {
-            font-size: 0.8125rem;
+            font-size: 0.875rem;
             color: var(--primary-color);
             font-weight: 500;
-            text-align: left;
+            text-align: center;
         }
 
         .divider {
@@ -85,27 +87,29 @@
     </style>
 </head>
 <body>
-    <div class="landing-card">
-        <!-- Header: judul kiri, 2 logo kanan atas -->
-        <div class="card-header">
-            <div class="card-header-title">
+    <!-- Logo di atas card -->
+    <div style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:420px;">
+        <div class="logo-top">
+            <img src="img/logouniv.png" alt="Logo Universitas" onerror="this.style.display='none'">
+            <img src="img/logopkkmb.png" alt="Logo PKKMB" onerror="this.style.display='none'">
+        </div>
+
+        <div class="landing-card">
+            <!-- Header -->
+            <div class="card-header">
                 <h1 class="landing-title">Sistem Absensi PKKMB 2026</h1>
                 <p class="landing-subtitle">Pengenalan Kehidupan Kampus Mahasiswa Baru</p>
                 <p class="landing-univ">Universitas Pasir Pengaraian</p>
             </div>
-            <div style="display:flex;flex-direction:column;align-items:center;gap:.5rem;">
-                <img src="img/logouniv.png" alt="Logo Universitas" onerror="this.style.display='none'">
-                <img src="img/logopkkmb.png" alt="Logo PKKMB" onerror="this.style.display='none'">
-            </div>
+
+            <hr class="divider">
+
+            <!-- Buttons -->
+            <a href="login.html" class="btn btn-primary btn-lg btn-block">Masuk</a>
+            <a href="register.html" class="btn btn-outline btn-lg btn-block">Daftar Akun Baru</a>
+
+            <p class="footer-text">© 2026 PKKMB UPP</p>
         </div>
-
-        <hr class="divider">
-
-        <!-- Buttons -->
-        <a href="login.html" class="btn btn-primary btn-lg btn-block">Masuk</a>
-        <a href="register.html" class="btn btn-outline btn-lg btn-block">Daftar Akun Baru</a>
-
-        <p class="footer-text">© 2026 PKKMB UPP</p>
     </div>
 
     <!-- Supabase -->
