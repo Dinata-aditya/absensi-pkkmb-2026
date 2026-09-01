@@ -1280,19 +1280,25 @@ async function lihatDetailMahasiswa(studentId) {
 
         const rows = sessions.map(ses => {
             const att = attMap[ses.id];
-            let statusBadge, waktu;
+            let statusBadge, waktu, actionBtn;
 
             if (att) {
                 statusBadge = att.status === 'HADIR'
                     ? '<span class="badge badge-green">Hadir</span>'
                     : '<span class="badge badge-red">Alpha</span>';
                 waktu = formatDT(att.scan_time);
+                // Tombol toggle
+                actionBtn = att.status === 'HADIR'
+                    ? `<button class="btn btn-ghost btn-sm" style="color:#ef4444" onclick="ubahStatusDariDetail('${att.session_id}','${studentId}','ALPHA','${ses.id}')">Set Alpha</button>`
+                    : `<button class="btn btn-ghost btn-sm" style="color:#2d9e5f" onclick="ubahStatusDariDetail('${att.session_id}','${studentId}','HADIR','${ses.id}')">Set Hadir</button>`;
             } else if (ses.status === 'CLOSED') {
                 statusBadge = '<span class="badge badge-red">Alpha</span>';
                 waktu = '-';
+                actionBtn = `<button class="btn btn-ghost btn-sm" style="color:#2d9e5f" onclick="ubahStatusDariDetail(null,'${studentId}','HADIR','${ses.id}')">Tandai Hadir</button>`;
             } else {
                 statusBadge = '<span class="badge badge-yellow">Belum</span>';
                 waktu = '-';
+                actionBtn = `<button class="btn btn-ghost btn-sm" style="color:#2d9e5f" onclick="ubahStatusDariDetail(null,'${studentId}','HADIR','${ses.id}')">Tandai Hadir</button>`;
             }
 
             return `
@@ -1302,6 +1308,7 @@ async function lihatDetailMahasiswa(studentId) {
                     <td>${ses.jam_mulai ? ses.jam_mulai.slice(0,5) : '-'}</td>
                     <td>${statusBadge}</td>
                     <td style="font-size:.8125rem;color:#6b7280">${waktu}</td>
+                    <td>${actionBtn}</td>
                 </tr>`;
         }).join('');
 
@@ -1315,6 +1322,7 @@ async function lihatDetailMahasiswa(studentId) {
                             <th style="padding:.5rem .75rem;text-align:left;font-weight:600">Jam</th>
                             <th style="padding:.5rem .75rem;text-align:left;font-weight:600">Status</th>
                             <th style="padding:.5rem .75rem;text-align:left;font-weight:600">Waktu Scan</th>
+                            <th style="padding:.5rem .75rem;text-align:left;font-weight:600">Ubah</th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
@@ -1326,5 +1334,32 @@ async function lihatDetailMahasiswa(studentId) {
         console.error(err);
         document.getElementById('detailMhsTable').innerHTML =
             `<p style="text-align:center;color:#ef4444;font-size:.875rem;">Gagal memuat data: ${err.message}</p>`;
+    }
+}
+
+async function ubahStatusDariDetail(attId, studentId, newStatus, sessionId) {
+    try {
+        if (attId) {
+            // Update record yang sudah ada
+            const { error } = await supabase
+                .from('attendances')
+                .update({ status: newStatus, scan_time: new Date().toISOString() })
+                .eq('session_id', attId)
+                .eq('student_id', studentId);
+            if (error) throw error;
+        } else {
+            // Insert record baru
+            const { error } = await supabase
+                .from('attendances')
+                .insert({ student_id: studentId, session_id: sessionId, status: newStatus, scan_time: new Date().toISOString() });
+            if (error) throw error;
+        }
+
+        // Reload detail modal
+        await lihatDetailMahasiswa(studentId);
+        await loadStatistik();
+
+    } catch (err) {
+        alert('Gagal: ' + err.message);
     }
 }
