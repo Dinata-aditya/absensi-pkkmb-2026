@@ -10,17 +10,44 @@
     <link rel="stylesheet" href="css/style.css">
     
     <style>
-        .login-container {
+        body {
+            background: linear-gradient(135deg, #1a6b3c 0%, #2d9e5f 60%, #10b981 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: var(--spacing-lg);
+            padding: 1rem;
         }
-        
-        .login-card {
+
+        .login-container {
             width: 100%;
             max-width: 450px;
+        }
+
+        .reg-logo-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+        .reg-logo-bar img {
+            width: 48px; height: 48px;
+            object-fit: contain;
+            background: white;
+            border-radius: 50%;
+            padding: 4px;
+        }
+        .reg-logo-bar span {
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,.15);
         }
         
         .divider {
@@ -46,6 +73,13 @@
 </head>
 <body>
     <div class="login-container">
+        <!-- Logo Bar -->
+        <div class="reg-logo-bar">
+            <img src="img/logouniv.png" alt="Logo UPP" onerror="this.style.display='none'">
+            <span>PKKMB 2026 — UPP</span>
+            <img src="img/logopkkmb.png" alt="Logo PKKMB" onerror="this.style.display='none'">
+        </div>
+
         <div class="login-card card">
             <div class="card-header">
                 <h2 class="card-title text-center">Masuk</h2>
