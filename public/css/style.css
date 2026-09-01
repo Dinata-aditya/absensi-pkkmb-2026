@@ -10,10 +10,10 @@
 
 :root {
     /* Colors */
-    --primary-color: #10b981;
-    --primary-hover: #059669;
+    --primary-color: #2d9e5f;
+    --primary-hover: #1a6b3c;
     --secondary-color: #64748b;
-    --success-color: #10b981;
+    --success-color: #2d9e5f;
     --danger-color: #ef4444;
     --warning-color: #f59e0b;
     --info-color: #3b82f6;
@@ -138,12 +138,13 @@ a:hover {
 }
 
 .btn-primary {
-    background-color: var(--primary-color);
+    background: linear-gradient(135deg, #1a6b3c 0%, #2d9e5f 60%, #10b981 100%);
     color: var(--white);
+    border: none;
 }
 
 .btn-primary:hover:not(:disabled) {
-    background-color: var(--primary-hover);
+    background: linear-gradient(135deg, #155a32 0%, #237a4a 60%, #059669 100%);
 }
 
 .btn-secondary {
