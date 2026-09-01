@@ -500,6 +500,27 @@
     </div>
 </div>
 
+<!-- Modal Detail Mahasiswa -->
+<div id="modalDetailMhs" class="modal">
+    <div class="modal-box" style="max-width:520px;">
+        <div class="modal-head">
+            <h3>Detail Kehadiran Mahasiswa</h3>
+            <button class="modal-close" onclick="closeModal('modalDetailMhs')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <!-- Info mahasiswa -->
+            <div id="detailMhsInfo" style="background:#f9fafb;border-radius:8px;padding:1rem;margin-bottom:1rem;"></div>
+            <!-- Ringkasan kehadiran -->
+            <div id="detailMhsSummary" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-bottom:1rem;"></div>
+            <!-- Tabel riwayat -->
+            <div id="detailMhsTable"></div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn btn-outline" onclick="closeModal('modalDetailMhs')">Tutup</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Tandai Hadir -->
 <div id="modalTandaiHadir" class="modal">
     <div class="modal-box" style="max-width:400px;">

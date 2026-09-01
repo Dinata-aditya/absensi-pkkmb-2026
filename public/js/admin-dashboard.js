@@ -197,12 +197,12 @@ function renderMahasiswaTable() {
     }
 
     tbody.innerHTML = filteredStudents.map(s => `
-        <tr>
+        <tr style="cursor:pointer;" onclick="lihatDetailMahasiswa('${s.id}')">
             <td>${s.nim}</td>
             <td>${s.nama_lengkap}</td>
             <td>${s.faculties?.nama || '-'}</td>
             <td>${s.study_programs?.nama || '-'}</td>
-            <td>
+            <td onclick="event.stopPropagation()">
                 <button class="btn btn-ghost btn-sm" onclick="bukaModalTandaiHadir('${s.id}','${s.nim}','${s.nama_lengkap}')">Tandai Hadir</button>
                 <button class="btn btn-ghost btn-sm" onclick="bukaModalStatusMhs('${s.id}')">Ubah Status</button>
                 <button class="btn btn-ghost btn-sm" onclick="bukaModalResetPassword('${s.id}')">Reset Password</button>
@@ -1208,3 +1208,123 @@ async function simpanTandaiHadir() {
 }
 
 
+
+
+// ═════════════════════════════════════════════════
+// DETAIL KEHADIRAN MAHASISWA
+// ═════════════════════════════════════════════════
+
+async function lihatDetailMahasiswa(studentId) {
+    const s = allStudents.find(x => x.id === studentId);
+    if (!s) return;
+
+    // Info mahasiswa
+    document.getElementById('detailMhsInfo').innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;font-size:.875rem;">
+            <div><span style="color:#6b7280">Nama</span><div style="font-weight:600">${s.nama_lengkap}</div></div>
+            <div><span style="color:#6b7280">NIM</span><div style="font-weight:600">${s.nim}</div></div>
+            <div><span style="color:#6b7280">Fakultas</span><div>${s.faculties?.nama || '-'}</div></div>
+            <div><span style="color:#6b7280">Prodi</span><div>${s.study_programs?.nama || '-'}</div></div>
+        </div>
+    `;
+
+    // Reset
+    document.getElementById('detailMhsSummary').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:1rem;">Memuat data...</div>';
+    document.getElementById('detailMhsTable').innerHTML = '';
+
+    openModal('modalDetailMhs');
+
+    try {
+        // Ambil semua sesi
+        const { data: sessions } = await supabase
+            .from('attendance_sessions')
+            .select('id, nama_kegiatan, hari_ke, tanggal, jam_mulai, status')
+            .order('hari_ke');
+
+        // Ambil absensi mahasiswa ini
+        const { data: atts } = await supabase
+            .from('attendances')
+            .select('session_id, status, scan_time')
+            .eq('student_id', studentId);
+
+        const attMap = {};
+        (atts || []).forEach(a => { attMap[a.session_id] = a; });
+
+        const totalSesi  = (sessions || []).length;
+        const totalHadir = (atts || []).filter(a => a.status === 'HADIR').length;
+        const totalAlpha = (atts || []).filter(a => a.status === 'ALPHA').length;
+        const belum      = totalSesi - (atts || []).length;
+
+        // Summary cards
+        document.getElementById('detailMhsSummary').innerHTML = `
+            <div style="background:#d1fae5;border-radius:8px;padding:.875rem;text-align:center;">
+                <div style="font-size:1.75rem;font-weight:700;color:#065f46">${totalHadir}</div>
+                <div style="font-size:.8125rem;color:#065f46">Hadir</div>
+            </div>
+            <div style="background:#fee2e2;border-radius:8px;padding:.875rem;text-align:center;">
+                <div style="font-size:1.75rem;font-weight:700;color:#991b1b">${totalAlpha}</div>
+                <div style="font-size:.8125rem;color:#991b1b">Alpha</div>
+            </div>
+            <div style="background:#fef3c7;border-radius:8px;padding:.875rem;text-align:center;">
+                <div style="font-size:1.75rem;font-weight:700;color:#92400e">${belum}</div>
+                <div style="font-size:.8125rem;color:#92400e">Belum</div>
+            </div>
+        `;
+
+        // Tabel riwayat per sesi
+        if (!sessions || sessions.length === 0) {
+            document.getElementById('detailMhsTable').innerHTML =
+                '<p style="text-align:center;color:#9ca3af;font-size:.875rem;">Belum ada sesi absensi</p>';
+            return;
+        }
+
+        const rows = sessions.map(ses => {
+            const att = attMap[ses.id];
+            let statusBadge, waktu;
+
+            if (att) {
+                statusBadge = att.status === 'HADIR'
+                    ? '<span class="badge badge-green">Hadir</span>'
+                    : '<span class="badge badge-red">Alpha</span>';
+                waktu = formatDT(att.scan_time);
+            } else if (ses.status === 'CLOSED') {
+                statusBadge = '<span class="badge badge-red">Alpha</span>';
+                waktu = '-';
+            } else {
+                statusBadge = '<span class="badge badge-yellow">Belum</span>';
+                waktu = '-';
+            }
+
+            return `
+                <tr>
+                    <td>Hari ${ses.hari_ke}</td>
+                    <td>${ses.nama_kegiatan}</td>
+                    <td>${ses.jam_mulai ? ses.jam_mulai.slice(0,5) : '-'}</td>
+                    <td>${statusBadge}</td>
+                    <td style="font-size:.8125rem;color:#6b7280">${waktu}</td>
+                </tr>`;
+        }).join('');
+
+        document.getElementById('detailMhsTable').innerHTML = `
+            <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:.875rem;">
+                    <thead>
+                        <tr style="background:#f9fafb;border-bottom:1px solid #e5e7eb;">
+                            <th style="padding:.5rem .75rem;text-align:left;font-weight:600">Hari</th>
+                            <th style="padding:.5rem .75rem;text-align:left;font-weight:600">Sesi</th>
+                            <th style="padding:.5rem .75rem;text-align:left;font-weight:600">Jam</th>
+                            <th style="padding:.5rem .75rem;text-align:left;font-weight:600">Status</th>
+                            <th style="padding:.5rem .75rem;text-align:left;font-weight:600">Waktu Scan</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        `;
+
+    } catch (err) {
+        console.error(err);
+        document.getElementById('detailMhsTable').innerHTML =
+            `<p style="text-align:center;color:#ef4444;font-size:.875rem;">Gagal memuat data: ${err.message}</p>`;
+    }
+}
