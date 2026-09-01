@@ -143,7 +143,7 @@ async function loadStatistik() {
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:1rem 1.25rem;margin-bottom:.75rem;">
             <div style="font-weight:600;margin-bottom:.75rem;color:#111;">Hari Ke-${hari}</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.75rem;font-size:.875rem;">
-                <div><div style="color:#6b7280">Hadir</div><div style="font-size:1.5rem;font-weight:700;color:#10b981">${dayHadir}</div></div>
+                <div><div style="color:#6b7280">Hadir</div><div style="font-size:1.5rem;font-weight:700;color:#43903F">${dayHadir}</div></div>
                 <div><div style="color:#6b7280">Alpha</div><div style="font-size:1.5rem;font-weight:700;color:#ef4444">${dayAlpha}</div></div>
                 <div><div style="color:#6b7280">Kehadiran</div><div style="font-size:1.5rem;font-weight:700;color:#111">${pct}%</div></div>
                 <div><div style="color:#6b7280">Sesi</div><div style="font-size:.875rem;color:#374151;margin-top:.25rem">${sess.map(s=>s.nama_kegiatan).join(', ')}</div></div>
@@ -319,8 +319,8 @@ async function loadAbsensiPerProdi() {
             const toggleBtn = att
                 ? (att.status === 'HADIR'
                     ? `<button class="btn btn-ghost btn-sm" onclick="ubahStatusAbsensi('${att.id}','ALPHA','${sessionId}')">Set Alpha</button>`
-                    : `<button class="btn btn-ghost btn-sm" style="color:#10b981" onclick="ubahStatusAbsensi('${att.id}','HADIR','${sessionId}')">Set Hadir</button>`)
-                : `<button class="btn btn-ghost btn-sm" style="color:#10b981" onclick="manualHadir('${mhs.id}','${sessionId}')">Tandai Hadir</button>`;
+                    : `<button class="btn btn-ghost btn-sm" style="color:#43903F" onclick="ubahStatusAbsensi('${att.id}','HADIR','${sessionId}')">Set Hadir</button>`)
+                : `<button class="btn btn-ghost btn-sm" style="color:#43903F" onclick="manualHadir('${mhs.id}','${sessionId}')">Tandai Hadir</button>`;
 
             const waktu = att ? formatDT(att.scan_time) : '-';
 
@@ -592,7 +592,7 @@ function printQR() {
     const w = window.open('','','width=600,height=700');
     w.document.write(`<!DOCTYPE html><html><head><title>QR – ${currentSession.nama_kegiatan}</title>
     <style>body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;margin:0;padding:2rem;}
-    h2{color:#10b981;} img{border:1px solid #e5e7eb;padding:1rem;} p{color:#6b7280;font-size:.9rem;}</style></head>
+    h2{color:#43903F;} img{border:1px solid #e5e7eb;padding:1rem;} p{color:#6b7280;font-size:.9rem;}</style></head>
     <body>
     <h1>Absensi PKKMB 2026</h1>
     <h2>${currentSession.nama_kegiatan}</h2>
@@ -1023,7 +1023,7 @@ function renderToggleSertif() {
     if (sertifikatAktif) {
         btn.textContent    = 'Nonaktifkan Sertifikat';
         btn.className      = 'btn btn-danger';
-        info.innerHTML     = '<span style="color:#10b981;font-weight:600;">● Aktif</span> — Mahasiswa yang memenuhi syarat sudah bisa download sertifikat';
+        info.innerHTML     = '<span style="color:#43903F;font-weight:600;">● Aktif</span> — Mahasiswa yang memenuhi syarat sudah bisa download sertifikat';
     } else {
         btn.textContent    = 'Aktifkan Sertifikat';
         btn.className      = 'btn btn-primary';
@@ -1206,3 +1206,4 @@ async function simpanTandaiHadir() {
         btn.textContent = 'Tandai Hadir';
     }
 }
+

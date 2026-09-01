@@ -10,10 +10,10 @@
 
 :root {
     /* Colors */
-    --primary-color: #10b981;
-    --primary-hover: #059669;
+    --primary-color: #43903F;
+    --primary-hover: #357A31;
     --secondary-color: #64748b;
-    --success-color: #10b981;
+    --success-color: #43903F;
     --danger-color: #ef4444;
     --warning-color: #f59e0b;
     --info-color: #3b82f6;
@@ -438,3 +438,4 @@ a:hover {
         padding: 0 var(--spacing-xl);
     }
 }
+
