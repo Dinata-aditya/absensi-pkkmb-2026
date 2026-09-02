@@ -1218,13 +1218,20 @@ async function lihatDetailMahasiswa(studentId) {
     const s = allStudents.find(x => x.id === studentId);
     if (!s) return;
 
+    currentStudent = s; // simpan untuk keperluan hapus
+
+    // Ambil email dari auth.users via RPC
+    const { data: emailData } = await supabase.rpc('get_email_by_nim', { p_nim: s.nim });
+    const email = emailData || '-';
+
     // Info mahasiswa
     document.getElementById('detailMhsInfo').innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;font-size:.875rem;">
             <div><span style="color:#6b7280">Nama</span><div style="font-weight:600">${s.nama_lengkap}</div></div>
             <div><span style="color:#6b7280">NIM</span><div style="font-weight:600">${s.nim}</div></div>
-            <div><span style="color:#6b7280">Fakultas</span><div>${s.faculties?.nama || '-'}</div></div>
+            <div><span style="color:#6b7280">Email</span><div>${email}</div></div>
             <div><span style="color:#6b7280">Prodi</span><div>${s.study_programs?.nama || '-'}</div></div>
+            <div style="grid-column:1/-1"><span style="color:#6b7280">Fakultas</span><div>${s.faculties?.nama || '-'}</div></div>
         </div>
     `;
 
@@ -1361,5 +1368,68 @@ async function ubahStatusDariDetail(attId, studentId, newStatus, sessionId) {
 
     } catch (err) {
         alert('Gagal: ' + err.message);
+    }
+}
+
+
+// ═════════════════════════════════════════════════
+// HAPUS MAHASISWA
+// ═════════════════════════════════════════════════
+async function confirmDeleteStudent() {
+    if (!currentStudent) return;
+    
+    const confirmed = confirm(
+        `HAPUS MAHASISWA?\n\n` +
+        `Nama: ${currentStudent.nama_lengkap}\n` +
+        `NIM: ${currentStudent.nim}\n\n` +
+        `⚠️ PERINGATAN: Data mahasiswa, akun login, dan semua riwayat absensi akan DIHAPUS PERMANEN.\n\n` +
+        `Tindakan ini TIDAK BISA DIBATALKAN.\n\n` +
+        `Ketik OK untuk melanjutkan.`
+    );
+    
+    if (!confirmed) return;
+    
+    await deleteStudent(currentStudent.id);
+}
+
+async function deleteStudent(studentId) {
+    const btn = event.target;
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Menghapus...';
+    }
+    
+    try {
+        const { data, error } = await supabase.rpc('admin_delete_student', {
+            p_student_id: studentId
+        });
+        
+        if (error) throw error;
+        
+        const result = data;
+        
+        if (!result.success) {
+            alert('Gagal menghapus: ' + result.message);
+            return;
+        }
+        
+        alert(
+            `Mahasiswa berhasil dihapus\n\n` +
+            `NIM: ${result.data.nim}\n` +
+            `Nama: ${result.data.nama}\n` +
+            `Data absensi terhapus: ${result.data.deleted_attendances} record`
+        );
+        
+        closeModal('modalDetailMhs');
+        await loadStudents();
+        await loadStatistik();
+        
+    } catch (err) {
+        alert('Error: ' + err.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Hapus Mahasiswa';
+        }
     }
 }
