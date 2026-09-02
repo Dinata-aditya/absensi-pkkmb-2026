@@ -1221,8 +1221,15 @@ async function lihatDetailMahasiswa(studentId) {
     currentStudent = s; // simpan untuk keperluan hapus
 
     // Ambil email dari auth.users via RPC
-    const { data: emailData } = await supabase.rpc('get_email_by_nim', { p_nim: s.nim });
-    const email = emailData || '-';
+    let email = '-';
+    try {
+        const { data: emailData, error: emailError } = await supabase.rpc('get_email_by_nim', { p_nim: s.nim });
+        if (!emailError && emailData) {
+            email = emailData;
+        }
+    } catch (err) {
+        console.warn('Failed to fetch email for NIM:', s.nim, err);
+    }
 
     // Info mahasiswa
     document.getElementById('detailMhsInfo').innerHTML = `
