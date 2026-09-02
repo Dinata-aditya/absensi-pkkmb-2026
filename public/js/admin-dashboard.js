@@ -1433,3 +1433,86 @@ async function deleteStudent(studentId) {
         }
     }
 }
+
+
+// ═════════════════════════════════════════════════
+// EDIT MAHASISWA
+// ═════════════════════════════════════════════════
+function bukaModalEditMahasiswa() {
+    if (!currentStudent) return;
+    
+    // Populate fakultas dropdown
+    const fakSel = document.getElementById('editFakultas');
+    fakSel.innerHTML = '<option value="">-- Pilih Fakultas --</option>';
+    allFaculties.forEach(f => {
+        fakSel.innerHTML += `<option value="${f.id}">${f.nama}</option>`;
+    });
+    
+    // Set current values
+    document.getElementById('editNim').value = currentStudent.nim;
+    document.getElementById('editNama').value = currentStudent.nama_lengkap;
+    document.getElementById('editFakultas').value = currentStudent.fakultas_id;
+    
+    // Filter and populate prodi
+    filterEditProdi();
+    document.getElementById('editProdi').value = currentStudent.prodi_id;
+    
+    closeModal('modalDetailMhs');
+    openModal('modalEditMhs');
+}
+
+function filterEditProdi() {
+    const fakId = document.getElementById('editFakultas').value;
+    const prodiSel = document.getElementById('editProdi');
+    
+    prodiSel.innerHTML = '<option value="">-- Pilih Prodi --</option>';
+    
+    if (!fakId) return;
+    
+    const filtered = allProdi.filter(p => p.faculty_id === fakId);
+    filtered.forEach(p => {
+        prodiSel.innerHTML += `<option value="${p.id}">${p.nama}</option>`;
+    });
+}
+
+async function simpanEditMahasiswa() {
+    if (!currentStudent) return;
+    
+    const nim = document.getElementById('editNim').value.trim();
+    const nama = document.getElementById('editNama').value.trim();
+    const fakId = document.getElementById('editFakultas').value;
+    const prodiId = document.getElementById('editProdi').value;
+    
+    if (!nim || !nama || !fakId || !prodiId) {
+        alert('Semua field wajib diisi');
+        return;
+    }
+    
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+    
+    try {
+        const { error } = await supabase
+            .from('students')
+            .update({
+                nim: nim,
+                nama_lengkap: nama,
+                fakultas_id: fakId,
+                prodi_id: prodiId
+            })
+            .eq('id', currentStudent.id);
+        
+        if (error) throw error;
+        
+        alert('Data mahasiswa berhasil diperbarui');
+        closeModal('modalEditMhs');
+        await loadStudents();
+        
+    } catch (err) {
+        alert('Gagal: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Simpan';
+    }
+}
