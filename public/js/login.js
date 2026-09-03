@@ -48,9 +48,9 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             // Admin login langsung pakai email
             email = nimOrEmail;
         } else {
-            // Mahasiswa — cari email berdasarkan NIM
+            // Mahasiswa — cari email berdasarkan NIM (pakai fungsi khusus login)
             const { data: emailData, error: nimError } = await supabase
-                .rpc('get_email_by_nim', { p_nim: nimOrEmail });
+                .rpc('get_email_for_login', { p_nim: nimOrEmail });
 
             if (nimError || !emailData) {
                 throw new Error('NIM tidak ditemukan. Pastikan NIM yang Anda masukkan benar.');
