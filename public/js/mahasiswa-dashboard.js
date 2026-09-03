@@ -372,44 +372,57 @@ async function downloadSertifikat() {
 
         ctx.textAlign = 'center';
 
+        // ── Helper: auto-fit text dalam batas maxWidth ──
+        function fitText(text, fontStyle, maxSize, minSize, maxWidth, fontFamily) {
+            let size = maxSize;
+            ctx.font = `${fontStyle} ${size}px ${fontFamily}`;
+            while (ctx.measureText(text).width > maxWidth && size > minSize) {
+                size -= 1;
+                ctx.font = `${fontStyle} ${size}px ${fontFamily}`;
+            }
+            return size;
+        }
+
+        // Area aman untuk teks (80% dari lebar canvas agar tidak keluar batas)
+        const safeWidth = W * 0.58;
+
         // ── No. Sertifikat ──────────────────────────
         ctx.fillStyle = '#555555';
-        ctx.font      = `normal ${Math.round(W * 0.016)}px 'Times New Roman', serif`;
+        ctx.font      = `normal ${Math.round(W * 0.014)}px Arial, sans-serif`;
         ctx.fillText(`No. ${noSertif}`, W / 2, Math.round(H * 0.408));
 
-        // ── Nama Mahasiswa (auto-fit font size) ─────
-        // Maksimum lebar nama = 60% dari lebar canvas
-        const maxNameWidth = W * 0.60;
-        let nameFontSize   = Math.round(W * 0.042); // mulai dari ukuran normal
-        ctx.font = `bold ${nameFontSize}px 'Times New Roman', serif`;
-        // Kurangi font size sampai nama muat
-        while (ctx.measureText(nama).width > maxNameWidth && nameFontSize > 20) {
-            nameFontSize -= 2;
-            ctx.font = `bold ${nameFontSize}px 'Times New Roman', serif`;
-        }
+        // ── Nama Mahasiswa (auto-fit) ────────────────
+        // Ukuran max 3.2%, min 1.5% dari lebar canvas
+        const nameMaxPx = Math.round(W * 0.032);
+        const nameMinPx = Math.round(W * 0.015);
+        const nameFontSize = fitText(nama, 'bold', nameMaxPx, nameMinPx, safeWidth, "'Times New Roman', serif");
         ctx.fillStyle = '#1a1a1a';
-        ctx.fillText(nama, W / 2, Math.round(H * 0.565));
+        ctx.fillText(nama, W / 2, Math.round(H * 0.560));
 
         // ── Garis bawah nama ────────────────────────
-        const nameWidth  = ctx.measureText(nama).width;
-        const lineY      = Math.round(H * 0.575);
-        const lineMargin = Math.round(W * 0.02);
+        const nameW     = ctx.measureText(nama).width;
+        const lineY     = Math.round(H * 0.572);
+        const linePad   = Math.round(W * 0.015);
         ctx.beginPath();
-        ctx.moveTo(W / 2 - nameWidth / 2 - lineMargin, lineY);
-        ctx.lineTo(W / 2 + nameWidth / 2 + lineMargin, lineY);
+        ctx.moveTo(W / 2 - nameW / 2 - linePad, lineY);
+        ctx.lineTo(W / 2 + nameW / 2 + linePad, lineY);
         ctx.strokeStyle = '#1a1a1a';
         ctx.lineWidth   = 1.5;
         ctx.stroke();
 
         // ── NIM ─────────────────────────────────────
         ctx.fillStyle = '#222222';
-        ctx.font      = `normal ${Math.round(W * 0.020)}px Arial, sans-serif`;
-        ctx.fillText(`NIM : ${nim}`, W / 2, Math.round(H * 0.618));
+        const nimSize = Math.round(W * 0.017);
+        ctx.font      = `normal ${nimSize}px Arial, sans-serif`;
+        ctx.fillText(`NIM : ${nim}`, W / 2, Math.round(H * 0.610));
 
-        // ── Prodi ───────────────────────────────────
-        ctx.font      = `bold ${Math.round(W * 0.020)}px Arial, sans-serif`;
+        // ── Prodi (auto-fit) ─────────────────────────
+        const prodiText   = `PRODI : ${prodi}`;
+        const prodiMaxPx  = Math.round(W * 0.019);
+        const prodiMinPx  = Math.round(W * 0.012);
+        fitText(prodiText, 'bold', prodiMaxPx, prodiMinPx, safeWidth, 'Arial, sans-serif');
         ctx.fillStyle = '#111111';
-        ctx.fillText(`PRODI : ${prodi}`, W / 2, Math.round(H * 0.650));
+        ctx.fillText(prodiText, W / 2, Math.round(H * 0.642));
 
         // Download sebagai PNG
         const link    = document.createElement('a');
