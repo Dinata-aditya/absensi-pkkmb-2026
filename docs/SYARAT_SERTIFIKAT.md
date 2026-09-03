@@ -19,12 +19,12 @@
 
 ## ✅ **Syarat Sertifikat**
 
-### **Minimal Hadir: 3 dari 5 Absensi (60%)**
+### **Minimal Hadir: 4 dari 5 Absensi (80%)**
 
 Artinya:
-- ✅ Mahasiswa boleh **tidak hadir maksimal 2 sesi**
-- ✅ Jika hadir **3, 4, atau 5 sesi** → **DAPAT sertifikat**
-- ❌ Jika hadir **kurang dari 3 sesi** → **TIDAK dapat sertifikat**
+- ✅ Mahasiswa boleh **tidak hadir maksimal 1 sesi**
+- ✅ Jika hadir **4 atau 5 sesi** → **DAPAT sertifikat**
+- ❌ Jika hadir **kurang dari 4 sesi** → **TIDAK dapat sertifikat**
 
 ---
 
@@ -35,12 +35,12 @@ Artinya:
 | Sesi | Kegiatan | Status |
 |------|----------|--------|
 | 1 | Pembekalan Pagi | ✅ HADIR |
-| 2 | Pembekalan Siang | ❌ ALPHA |
+| 2 | Pembekalan Siang | ✅ HADIR |
 | 3 | PKKMB H-1 Pagi | ✅ HADIR |
 | 4 | PKKMB H-1 Siang | ❌ ALPHA |
 | 5 | PKKMB Hari H | ✅ HADIR |
 
-**Total:** 3/5 hadir → **DAPAT sertifikat** ✅
+**Total:** 4/5 hadir → **DAPAT sertifikat** ✅
 
 ---
 
@@ -66,9 +66,9 @@ Artinya:
 | 2 | Pembekalan Siang | ❌ ALPHA |
 | 3 | PKKMB H-1 Pagi | ✅ HADIR |
 | 4 | PKKMB H-1 Siang | ❌ ALPHA |
-| 5 | PKKMB Hari H | ❌ ALPHA |
+| 5 | PKKMB Hari H | ✅ HADIR |
 
-**Total:** 2/5 hadir → **TIDAK dapat sertifikat** ❌
+**Total:** 3/5 hadir → **TIDAK dapat sertifikat** ❌
 
 ---
 
@@ -84,10 +84,10 @@ Artinya:
 ║     Selamat! Anda Berhak Mendapat      ║
 ║           Sertifikat                   ║
 ║                                        ║
-║   Anda telah hadir 3 dari 5 absensi   ║
+║   Anda telah hadir 4 dari 5 absensi   ║
 ║   kegiatan PKKMB 2026.                 ║
 ║                                        ║
-║   ✓ Memenuhi syarat minimal 3          ║
+║   ✓ Memenuhi syarat minimal 4          ║
 ║     kehadiran                          ║
 ║                                        ║
 ║   [ Download Sertifikat ]              ║
@@ -107,10 +107,10 @@ Artinya:
 ║     Sertifikat Tidak Tersedia          ║
 ║                                        ║
 ║   Untuk mendapat sertifikat, Anda      ║
-║   harus hadir minimal 3 dari 5         ║
+║   harus hadir minimal 4 dari 5         ║
 ║   absensi.                             ║
 ║                                        ║
-║   Kehadiran Anda: 2/5 absensi          ║
+║   Kehadiran Anda: 3/5 absensi          ║
 ║                                        ║
 ║   Kurang 1 absensi lagi                ║
 ║                                        ║
@@ -156,19 +156,19 @@ Setelah diaktifkan:
 ## 📝 FAQ
 
 ### **Q: Kalau saya hadir 4 dari 5, dapat sertifikat?**
-A: **Ya**, Anda dapat sertifikat. Syarat minimal adalah 3 kehadiran.
+A: **Ya**, Anda dapat sertifikat. Syarat minimal adalah 4 kehadiran.
 
 ### **Q: Kalau saya hadir 3 dari 5, dapat sertifikat?**
-A: **Ya**, Anda dapat sertifikat. 3 kehadiran adalah batas minimal.
+A: **Tidak**, Anda tidak dapat sertifikat. Minimal 4 kehadiran.
 
 ### **Q: Kalau saya hadir 2 dari 5, dapat sertifikat?**
-A: **Tidak**, Anda tidak dapat sertifikat. Minimal 3 kehadiran.
+A: **Tidak**, Anda tidak dapat sertifikat. Minimal 4 kehadiran.
 
 ### **Q: Boleh tidak hadir di hari ketiga?**
-A: **Boleh**, asal total kehadiran Anda minimal 3 dari 5 sesi.
+A: **Boleh**, asal total kehadiran Anda minimal 4 dari 5 sesi. Artinya Anda harus hadir semua di Hari 1 (2 sesi) dan Hari 2 (2 sesi).
 
-### **Q: Boleh tidak hadir 2 hari penuh?**
-A: **Tidak**, karena minimal harus hadir 3 sesi. Kalau tidak hadir 2 hari penuh (4 sesi), maksimal Anda cuma hadir 1 sesi.
+### **Q: Boleh tidak hadir 1 hari penuh?**
+A: **Tergantung**. Kalau Hari 1 atau Hari 2 (yang punya 2 sesi), Anda masih bisa dapat sertifikat kalau hadir di sesi lain. Tapi kalau miss 2 sesi + 1 sesi lagi, total cuma 2/5, tidak dapat sertifikat.
 
 ### **Q: Kalau hadir 5 dari 5, dapat bonus?**
 A: Tidak ada bonus khusus, tapi Anda mendapat sertifikat dengan catatan kehadiran sempurna.
@@ -226,16 +226,16 @@ Sertifikat PKKMB 2026 ini berguna sebagai:
 - Artinya: Harus hadir 2x di Hari 1, 2x di Hari 2, dan 1x di Hari 3
 - Total minimal: 5 dari 5 sesi (tidak boleh miss sama sekali)
 
-### **Sekarang (Perubahan Terbaru):**
-- Syarat: Hadir **minimal 3 dari 5 total sesi (60%)**
-- Artinya: Boleh miss 2 sesi, tidak peduli hari mana
-- Sangat fleksibel untuk mahasiswa
+### **Sekarang (Versi Final):**
+- Syarat: Hadir **minimal 4 dari 5 total sesi (80%)**
+- Artinya: Boleh miss 1 sesi, tidak peduli hari mana
+- Seimbang antara fleksibel dan tetap menjaga standar
 
-**Alasan perubahan:**
-- Lebih realistis untuk mahasiswa
-- Toleransi 2 sesi untuk kondisi darurat (sakit, urusan keluarga, dll)
-- Tetap menjaga standar kehadiran minimal 60%
-- Lebih banyak mahasiswa yang dapat sertifikat
+**Alasan penetapan 4 dari 5:**
+- Lebih realistis untuk mahasiswa (toleransi 1 sesi)
+- Standar 80% adalah standar umum kehadiran yang baik
+- Tetap menjaga nilai dan prestige sertifikat
+- Mahasiswa termotivasi untuk hadir maksimal
 
 ---
 
