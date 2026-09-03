@@ -228,25 +228,16 @@ async function cekDanTampilkanSertifikat() {
             .filter(a => a.status === 'HADIR')
             .map(a => a.session_id));
 
-        // Hitung hadir per hari
-        const hadirPerHari = {};
-        sessions.forEach(s => {
-            if (!hadirPerHari[s.hari_ke]) hadirPerHari[s.hari_ke] = 0;
-            if (hadirSet.has(s.id)) hadirPerHari[s.hari_ke]++;
-        });
+        // Hitung total kehadiran
+        const totalSesi = sessions.length;
+        const totalHadir = hadirSet.size;
+        
+        // Syarat: minimal 4 dari 5 absensi (80%)
+        const minimalHadir = 4;
+        const layak = totalHadir >= minimalHadir;
 
-        // Semua hari yang punya sesi
-        const semuaHari = [...new Set(sessions.map(s => s.hari_ke))].sort();
-
-        // Syarat: hadir minimal 2 sesi di SETIAP hari
-        const layak = semuaHari.length >= 2 &&
-            semuaHari.every(h => (hadirPerHari[h] || 0) >= 2);
-
-        const totalHari = semuaHari.length;
-        const hariLolos = semuaHari.filter(h => (hadirPerHari[h] || 0) >= 2).length;
-        const deskripsi = semuaHari.map(h =>
-            `Hari ${h}: ${hadirPerHari[h] || 0}/2 sesi`
-        ).join(' &nbsp;|&nbsp; ');
+        // Deskripsi untuk ditampilkan
+        const deskripsi = `${totalHadir} dari ${totalSesi} absensi`;
 
         // Sisipkan kartu sertifikat ke dashboard-grid setelah kartu riwayat absensi
         const attCard = document.getElementById('attendanceHistory').closest('.card');
@@ -297,8 +288,11 @@ async function cekDanTampilkanSertifikat() {
                         </svg>
                     </div>
                     <h3 style="margin-bottom:.5rem;color:#065f46;">Selamat! Anda Berhak Mendapat Sertifikat</h3>
-                    <p style="color:#6b7280;font-size:.875rem;margin-bottom:1.5rem;">
-                        Anda telah hadir di semua hari kegiatan PKKMB 2026.
+                    <p style="color:#6b7280;font-size:.875rem;margin-bottom:.5rem;">
+                        Anda telah hadir <strong>${totalHadir} dari ${totalSesi} absensi</strong> kegiatan PKKMB 2026.
+                    </p>
+                    <p style="color:#059669;font-size:.8125rem;margin-bottom:1.5rem;">
+                        ✓ Memenuhi syarat minimal 4 kehadiran
                     </p>
                     <button class="btn btn-primary btn-lg" onclick="downloadSertifikat()">
                         Download Sertifikat
@@ -319,11 +313,11 @@ async function cekDanTampilkanSertifikat() {
                     </div>
                     <h3 style="margin-bottom:.5rem;color:#92400e;">Sertifikat Tidak Tersedia</h3>
                     <p style="color:#6b7280;font-size:.875rem;margin-bottom:.75rem;">
-                        Sertifikat diberikan jika hadir minimal 2 sesi di setiap hari kegiatan.
+                        Untuk mendapat sertifikat, Anda harus hadir minimal <strong>4 dari 5 absensi</strong>.
                     </p>
-                    <p style="font-size:.875rem;color:#374151;">${deskripsi}</p>
+                    <p style="font-size:.9375rem;font-weight:600;color:#374151;">Kehadiran Anda: ${totalHadir}/${totalSesi} absensi</p>
                     <p style="font-size:.8125rem;color:#9ca3af;margin-top:.5rem;">
-                        Progress: ${hariLolos}/${totalHari} hari terpenuhi
+                        Kurang ${minimalHadir - totalHadir} absensi lagi
                     </p>
                 </div>
             `;
