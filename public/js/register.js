@@ -2,6 +2,7 @@
 
 let facultiesData = [];
 let studyProgramsData = [];
+let isSubmitting = false;
 
 // Wait for Supabase to be initialized
 (async function init() {
@@ -68,7 +69,7 @@ async function loadFacultiesAndPrograms() {
         
     } catch (error) {
         console.error('Error loading data:', error);
-        showAlert('Gagal memuat data fakultas dan program studi', 'danger');
+        showAlert('Gagal memuat data fakultas dan program studi. Silakan refresh halaman.', 'danger');
     }
 }
 
@@ -181,9 +182,48 @@ function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// Utility: Sleep function
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Retry wrapper for database operations
+async function retryOperation(operation, maxRetries = 3, delayMs = 2000) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            return await operation();
+        } catch (error) {
+            console.warn(`Attempt ${attempt}/${maxRetries} failed:`, error);
+            
+            // Don't retry on validation errors or duplicates
+            if (error.message.includes('sudah terdaftar') || 
+                error.message.includes('unique') ||
+                error.code === '23505') {
+                throw error;
+            }
+            
+            // Last attempt, throw error
+            if (attempt === maxRetries) {
+                throw new Error(`Gagal setelah ${maxRetries} percobaan. Silakan coba lagi dalam beberapa saat.`);
+            }
+            
+            // Wait before retry with exponential backoff
+            const waitTime = delayMs * attempt;
+            console.log(`Waiting ${waitTime}ms before retry...`);
+            await sleep(waitTime);
+        }
+    }
+}
+
 // Handle form submission
 document.getElementById('registerForm').addEventListener('submit', async function(e) {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (isSubmitting) {
+        console.log('Already submitting, please wait...');
+        return;
+    }
     
     // Validate form
     if (!validateForm()) {
@@ -199,79 +239,94 @@ document.getElementById('registerForm').addEventListener('submit', async functio
     const prodiId = document.getElementById('prodi').value;
     
     // Show loading
+    isSubmitting = true;
     const submitBtn = document.getElementById('submitBtn');
     const submitText = document.getElementById('submitText');
     const submitSpinner = document.getElementById('submitSpinner');
     
     submitBtn.disabled = true;
-    submitText.style.display = 'none';
+    submitText.textContent = 'Sedang memproses...';
     submitSpinner.style.display = 'inline-block';
     
     try {
-        // 1. Create user in Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-                data: {
-                    nim: nim,
-                    nama_lengkap: namaLengkap
+        // 1. Create user in Supabase Auth with retry
+        const authData = await retryOperation(async () => {
+            const { data, error } = await supabase.auth.signUp({
+                email: email,
+                password: password,
+                options: {
+                    data: {
+                        nim: nim,
+                        nama_lengkap: namaLengkap
+                    }
                 }
+            });
+            
+            if (error) {
+                // Check for specific errors
+                if (error.message.includes('already registered') || error.message.includes('already exists')) {
+                    throw new Error('Email sudah terdaftar. Gunakan email lain atau login.');
+                }
+                throw error;
             }
+            
+            if (!data.user) {
+                throw new Error('Gagal membuat akun. Silakan coba lagi.');
+            }
+            
+            return data;
         });
-        
-        if (authError) {
-            // Check for specific errors
-            if (authError.message.includes('already registered')) {
-                throw new Error('Email sudah terdaftar. Gunakan email lain atau login.');
-            }
-            throw authError;
-        }
-        
-        if (!authData.user) {
-            throw new Error('Gagal membuat akun. Silakan coba lagi.');
-        }
         
         const userId = authData.user.id;
         
-        // 2. Insert into user_roles table
-        const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert({
-                user_id: userId,
-                role: 'MAHASISWA'
-            });
+        // Small delay to ensure auth propagation
+        await sleep(500);
         
-        if (roleError) {
-            console.error('Role insert error:', roleError);
-            throw new Error('Gagal menyimpan role pengguna');
-        }
-        
-        // 3. Insert into students table
-        const { error: studentError } = await supabase
-            .from('students')
-            .insert({
-                user_id: userId,
-                nim: nim,
-                nama_lengkap: namaLengkap,
-                fakultas_id: fakultasId,
-                prodi_id: prodiId,
-                status: 'ACTIVE'
-            });
-        
-        if (studentError) {
-            console.error('Student insert error:', studentError);
+        // 2. Insert into user_roles table with retry
+        await retryOperation(async () => {
+            const { error } = await supabase
+                .from('user_roles')
+                .insert({
+                    user_id: userId,
+                    role: 'MAHASISWA'
+                });
             
-            // Check for duplicate NIM
-            if (studentError.message.includes('unique') || studentError.code === '23505') {
-                throw new Error('NIM sudah terdaftar. Gunakan NIM yang berbeda.');
+            if (error) {
+                console.error('Role insert error:', error);
+                throw new Error('Gagal menyimpan role pengguna');
             }
+        });
+        
+        // 3. Insert into students table with retry
+        await retryOperation(async () => {
+            const { error } = await supabase
+                .from('students')
+                .insert({
+                    user_id: userId,
+                    nim: nim,
+                    nama_lengkap: namaLengkap,
+                    fakultas_id: fakultasId,
+                    prodi_id: prodiId,
+                    status: 'ACTIVE'
+                });
             
-            throw new Error('Gagal menyimpan data mahasiswa');
-        }
+            if (error) {
+                console.error('Student insert error:', error);
+                
+                // Check for duplicate NIM
+                if (error.message.includes('unique') || error.code === '23505') {
+                    throw new Error('NIM sudah terdaftar. Gunakan NIM yang berbeda.');
+                }
+                
+                throw new Error('Gagal menyimpan data mahasiswa');
+            }
+        });
         
         // Success!
-        showAlert('Registrasi berhasil! Anda sudah bisa login dan melakukan absensi.', 'success');
+        submitText.textContent = 'Berhasil! Mengalihkan...';
+        submitSpinner.style.display = 'none';
+        
+        showAlert('✓ Registrasi berhasil! Anda sudah bisa login dan melakukan absensi.', 'success');
         
         // Redirect to login after 2 seconds
         setTimeout(() => {
@@ -280,11 +335,26 @@ document.getElementById('registerForm').addEventListener('submit', async functio
         
     } catch (error) {
         console.error('Registration error:', error);
-        showAlert(error.message || 'Gagal melakukan registrasi. Silakan coba lagi.', 'danger');
+        
+        // User-friendly error messages
+        let errorMessage = 'Gagal melakukan registrasi. ';
+        
+        if (error.message.includes('sudah terdaftar')) {
+            errorMessage = error.message;
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            errorMessage += 'Koneksi internet bermasalah. Periksa koneksi Anda dan coba lagi.';
+        } else if (error.message.includes('percobaan')) {
+            errorMessage += error.message + ' Server sedang sibuk.';
+        } else {
+            errorMessage += error.message || 'Silakan coba lagi dalam beberapa saat.';
+        }
+        
+        showAlert(errorMessage, 'danger');
         
         // Re-enable button
+        isSubmitting = false;
         submitBtn.disabled = false;
-        submitText.style.display = 'inline';
+        submitText.textContent = 'Daftar Sekarang';
         submitSpinner.style.display = 'none';
     }
 });
@@ -303,4 +373,4 @@ function showAlert(message, type = 'info') {
     alertContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-console.log('✓ Register.js loaded');
+console.log('✓ Register.js loaded (with retry mechanism)');

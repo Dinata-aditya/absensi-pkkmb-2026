@@ -18,6 +18,48 @@
             margin: 0 auto;
         }
 
+        /* Notice Banner */
+        .notice-banner {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 4px solid #f59e0b;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+        }
+        .notice-banner h4 {
+            color: #92400e;
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .notice-icon {
+            width: 20px;
+            height: 20px;
+            background: #f59e0b;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+        .notice-banner ul {
+            color: #78350f;
+            font-size: 0.8125rem;
+            line-height: 1.6;
+            margin: 0;
+            padding-left: 1.25rem;
+        }
+        .notice-banner li {
+            margin-bottom: 0.25rem;
+        }
+
         /* Logo bar */
         .reg-logo-bar {
             display: flex;
@@ -150,6 +192,20 @@
 <body>
 <div class="register-wrap">
 
+    <!-- Notice Banner -->
+    <div class="notice-banner">
+        <h4>
+            <span class="notice-icon">!</span>
+            PENTING - Baca Sebelum Mendaftar
+        </h4>
+        <ul>
+            <li><strong>Tunggu 10-15 detik</strong> setelah klik tombol "Daftar Sekarang"</li>
+            <li><strong>JANGAN</strong> klik tombol berkali-kali atau refresh halaman</li>
+            <li><strong>JANGAN</strong> tutup browser sebelum muncul notifikasi berhasil</li>
+            <li>Kalau gagal, tunggu 1 menit lalu coba lagi</li>
+        </ul>
+    </div>
+
     <!-- Logo Bar -->
     <div class="reg-logo-bar">
         <img src="img/logouniv.png" alt="Logo UPP" onerror="this.style.display='none'">
@@ -252,5 +308,3 @@
 <script src="js/helpbutton.js"></script>
 </body>
 </html>
-
-
