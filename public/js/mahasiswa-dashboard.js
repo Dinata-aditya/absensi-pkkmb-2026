@@ -370,25 +370,46 @@ async function downloadSertifikat() {
         // Gambar template sebagai background
         ctx.drawImage(img, 0, 0);
 
-        // ── No. Sertifikat ──────────────────────────
-        ctx.fillStyle = '#333333';
         ctx.textAlign = 'center';
-        ctx.font      = `normal ${Math.round(W * 0.018)}px Arial`;
-        ctx.fillText(`No. ${noSertif}`, W / 2, Math.round(H * 0.405));
 
-        // ── Nama Mahasiswa ──────────────────────────
-        ctx.fillStyle = '#111111';
-        ctx.font      = `bold ${Math.round(W * 0.048)}px Arial`;
+        // ── No. Sertifikat ──────────────────────────
+        ctx.fillStyle = '#555555';
+        ctx.font      = `normal ${Math.round(W * 0.016)}px 'Times New Roman', serif`;
+        ctx.fillText(`No. ${noSertif}`, W / 2, Math.round(H * 0.408));
+
+        // ── Nama Mahasiswa (auto-fit font size) ─────
+        // Maksimum lebar nama = 60% dari lebar canvas
+        const maxNameWidth = W * 0.60;
+        let nameFontSize   = Math.round(W * 0.042); // mulai dari ukuran normal
+        ctx.font = `bold ${nameFontSize}px 'Times New Roman', serif`;
+        // Kurangi font size sampai nama muat
+        while (ctx.measureText(nama).width > maxNameWidth && nameFontSize > 20) {
+            nameFontSize -= 2;
+            ctx.font = `bold ${nameFontSize}px 'Times New Roman', serif`;
+        }
+        ctx.fillStyle = '#1a1a1a';
         ctx.fillText(nama, W / 2, Math.round(H * 0.565));
+
+        // ── Garis bawah nama ────────────────────────
+        const nameWidth  = ctx.measureText(nama).width;
+        const lineY      = Math.round(H * 0.575);
+        const lineMargin = Math.round(W * 0.02);
+        ctx.beginPath();
+        ctx.moveTo(W / 2 - nameWidth / 2 - lineMargin, lineY);
+        ctx.lineTo(W / 2 + nameWidth / 2 + lineMargin, lineY);
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth   = 1.5;
+        ctx.stroke();
 
         // ── NIM ─────────────────────────────────────
         ctx.fillStyle = '#222222';
-        ctx.font      = `normal ${Math.round(W * 0.022)}px Arial`;
-        ctx.fillText(`NIM : ${nim}`, W / 2, Math.round(H * 0.635));
+        ctx.font      = `normal ${Math.round(W * 0.020)}px Arial, sans-serif`;
+        ctx.fillText(`NIM : ${nim}`, W / 2, Math.round(H * 0.618));
 
         // ── Prodi ───────────────────────────────────
-        ctx.font = `normal ${Math.round(W * 0.022)}px Arial`;
-        ctx.fillText(`PRODI : ${prodi}`, W / 2, Math.round(H * 0.672));
+        ctx.font      = `bold ${Math.round(W * 0.020)}px Arial, sans-serif`;
+        ctx.fillStyle = '#111111';
+        ctx.fillText(`PRODI : ${prodi}`, W / 2, Math.round(H * 0.650));
 
         // Download sebagai PNG
         const link    = document.createElement('a');
