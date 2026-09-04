@@ -73,8 +73,26 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 
         if (!authData.user) throw new Error('Login gagal. Silakan coba lagi.');
 
-        const role = await getUserRole(authData.user.id);
-        if (!role) throw new Error('Role pengguna tidak ditemukan. Hubungi administrator.');
+        // Tunggu session benar-benar tersedia (penting untuk HP/koneksi lambat)
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        // Retry getUserRole hingga 3x dengan jeda (antisipasi koneksi lambat)
+        let role = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            role = await getUserRole(authData.user.id);
+            if (role) break;
+            if (attempt < 3) {
+                // Tunggu sebelum retry
+                await new Promise(resolve => setTimeout(resolve, 600 * attempt));
+            }
+        }
+
+        if (!role) {
+            throw new Error(
+                'Gagal memuat data akun. Kemungkinan koneksi internet lambat.\n\n' +
+                'Silakan coba lagi. Jika masih gagal, hubungi panitia.'
+            );
+        }
 
         showAlert('Login berhasil! Mengarahkan...', 'success');
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -82,10 +100,13 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 
     } catch (error) {
         console.error('Login error:', error);
+        // Pastikan error selalu tampil jelas (tidak hilang di mobile)
         showAlert(error.message || 'Login gagal. Silakan coba lagi.', 'danger');
         submitBtn.disabled = false;
         submitText.style.display = 'inline';
         submitSpinner.style.display = 'none';
+        // Scroll ke atas agar error terlihat di mobile
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 });
 
