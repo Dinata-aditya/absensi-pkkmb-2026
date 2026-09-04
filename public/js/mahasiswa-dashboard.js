@@ -407,12 +407,15 @@ async function downloadSertifikat() {
         ctx.font      = `normal ${px12}px ${fontCalibri}`;
         ctx.fillText(`No. ${noSertif}`, W / 2, Math.round(H * 0.408));
 
-        // ── Nama Mahasiswa (font 28 bold, Calibri, auto-fit) ──
+        // ── Nama Mahasiswa (font 28 bold, Calibri, auto-fit jika nama panjang) ──
+        // fitText akan kurangi ukuran font otomatis sampai muat dalam safeWidth
         const nameFontSize = fitText(nama, 'bold', px28, safeWidth);
+        // ctx.font sudah di-set oleh fitText, langsung fillText
         ctx.fillStyle = '#1a1a1a';
         ctx.fillText(nama, W / 2, Math.round(H * 0.548));
 
         // ── Garis bawah nama ────────────────────────
+        // Ukur lebar nama SETELAH font di-set oleh fitText
         const nameW   = ctx.measureText(nama).width;
         const lineY   = Math.round(H * 0.562);
         const linePad = Math.round(W * 0.08);

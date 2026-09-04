@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST - Preview Sertifikat</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 6px;
+            color: #1e3a5f;
+            font-size: 1.4rem;
+        }
+        .badge {
+            display: block;
+            text-align: center;
+            background: #f59e0b;
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 3px 0;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            letter-spacing: 1px;
+        }
+        .panel {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.1);
+            margin-bottom: 20px;
+        }
+        .panel h2 {
+            font-size: 1rem;
+            color: #374151;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .form-group.full { grid-column: 1 / -1; }
+        label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+        input, select {
+            padding: 9px 12px;
+            border: 1.5px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color .2s;
+        }
+        input:focus, select:focus { border-color: #3b82f6; }
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+        }
+        button {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity .2s;
+        }
+        button:hover { opacity: .85; }
+        button:disabled { opacity: .5; cursor: not-allowed; }
+        .btn-preview  { background: #3b82f6; color: #fff; }
+        .btn-download { background: #10b981; color: #fff; }
+        .btn-reset    { background: #e5e7eb; color: #374151; }
+
+        /* Info posisi */
+        .info-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            color: #1e40af;
+            margin-bottom: 16px;
+        }
+        .info-box code {
+            background: #dbeafe;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        /* Slider posisi */
+        .sliders {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .slider-group label span {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #3b82f6;
+            font-family: monospace;
+        }
+        input[type=range] {
+            padding: 0;
+            border: none;
+            height: 4px;
+            accent-color: #3b82f6;
+        }
+
+        /* Preview canvas */
+        .preview-wrap {
+            background: #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+        .preview-wrap p {
+            color: #9ca3af;
+            font-size: 0.875rem;
+            padding: 40px 0;
+        }
+        #previewCanvas {
+            max-width: 100%;
+            border-radius: 6px;
+            box-shadow: 0 4px 16px rgba(0,0,0,.15);
+            display: none;
+        }
+        #statusMsg {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #6b7280;
+            min-height: 18px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎓 Test Preview Sertifikat</h1>
+    <span class="badge">⚠️ HALAMAN TESTING — TIDAK UNTUK PRODUKSI</span>
+
+    <!-- Panel input data -->
+    <div class="panel">
+        <h2>📝 Data Mahasiswa (dummy)</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Nama Lengkap</label>
+                <input type="text" id="inputNama" value="ADITYA DINATA" placeholder="Nama mahasiswa">
+            </div>
+            <div class="form-group">
+                <label>NIM</label>
+                <input type="text" id="inputNim" value="2636062" placeholder="NIM mahasiswa">
+            </div>
+            <div class="form-group">
+                <label>Program Studi</label>
+                <input type="text" id="inputProdi" value="SISTEM INFORMASI" placeholder="Nama prodi">
+            </div>
+            <div class="form-group">
+                <label>Nama Panjang (test auto-fit)</label>
+                <select id="presetNama">
+                    <option value="ADITYA DINATA">Pendek — ADITYA DINATA</option>
+                    <option value="MUHAMMAD FADHIL RAHMAN HARAHAP">Sedang — MUHAMMAD FADHIL RAHMAN HARAHAP</option>
+                    <option value="ANAK AGUNG NGURAH MADE SURYA PRATAMA PUTRA">Panjang — ANAK AGUNG NGURAH MADE SURYA PRATAMA PUTRA</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel posisi (slider) -->
+    <div class="panel">
+        <h2>🎯 Atur Posisi Teks (H * nilai)</h2>
+        <div class="info-box">
+            Geser slider untuk menyesuaikan posisi vertikal. Nilai <code>0.0</code> = atas canvas, <code>1.0</code> = bawah canvas.
+            Klik <strong>Preview</strong> setiap kali ubah nilai.
+        </div>
+        <div class="sliders">
+            <div class="slider-group">
+                <label>No. Sertifikat <span id="valNoSertif">0.408</span></label>
+                <input type="range" id="slNoSertif" min="0.30" max="0.55" step="0.002" value="0.408">
+            </div>
+            <div class="slider-group">
+                <label>Nama <span id="valNama">0.548</span></label>
+                <input type="range" id="slNama" min="0.40" max="0.70" step="0.002" value="0.548">
+            </div>
+            <div class="slider-group">
+                <label>Garis bawah nama <span id="valGaris">0.562</span></label>
+                <input type="range" id="slGaris" min="0.42" max="0.72" step="0.002" value="0.562">
+            </div>
+            <div class="slider-group">
+                <label>NIM <span id="valNim">0.610</span></label>
+                <input type="range" id="slNim" min="0.50" max="0.80" step="0.002" value="0.610">
+            </div>
+            <div class="slider-group">
+                <label>Prodi <span id="valProdi">0.642</span></label>
+                <input type="range" id="slProdi" min="0.52" max="0.82" step="0.002" value="0.642">
+            </div>
+            <div class="slider-group">
+                <label>Lebar garis (W * nilai) <span id="valLinePad">0.080</span></label>
+                <input type="range" id="slLinePad" min="0.00" max="0.15" step="0.005" value="0.080">
+            </div>
+        </div>
+
+        <!-- Tampilkan nilai untuk di-copy ke kode -->
+        <div style="margin-top:14px;background:#f9fafb;border-radius:6px;padding:10px 14px;font-size:0.8rem;font-family:monospace;color:#374151;">
+            <strong>Nilai untuk di-copy ke mahasiswa-dashboard.js:</strong><br>
+            <span id="codeOutput" style="color:#1d4ed8;line-height:2"></span>
+        </div>
+    </div>
+
+    <!-- Tombol aksi -->
+    <div class="panel" style="padding:16px 24px;">
+        <div class="btn-row">
+            <button class="btn-preview"  onclick="renderPreview()">👁️ Preview</button>
+            <button class="btn-download" onclick="downloadSertif()" id="btnDownload" disabled>⬇️ Download PNG</button>
+            <button class="btn-reset"    onclick="resetSliders()">↺ Reset Posisi</button>
+        </div>
+    </div>
+
+    <!-- Preview canvas -->
+    <div class="panel">
+        <h2>🖼️ Preview Sertifikat</h2>
+        <div class="preview-wrap">
+            <p id="emptyMsg">Klik <strong>Preview</strong> untuk melihat hasil</p>
+            <canvas id="previewCanvas"></canvas>
+        </div>
+        <div id="statusMsg"></div>
+    </div>
+</div>
+
+<script>
+    // ── Sync slider → label ──────────────────────────────
+    const sliders = [
+        { sl: 'slNoSertif', lbl: 'valNoSertif' },
+        { sl: 'slNama',     lbl: 'valNama'     },
+        { sl: 'slGaris',    lbl: 'valGaris'    },
+        { sl: 'slNim',      lbl: 'valNim'      },
+        { sl: 'slProdi',    lbl: 'valProdi'    },
+        { sl: 'slLinePad',  lbl: 'valLinePad'  },
+    ];
+    sliders.forEach(({ sl, lbl }) => {
+        document.getElementById(sl).addEventListener('input', function () {
+            document.getElementById(lbl).textContent = parseFloat(this.value).toFixed(3);
+            updateCodeOutput();
+        });
+    });
+
+    // Preset nama
+    document.getElementById('presetNama').addEventListener('change', function () {
+        document.getElementById('inputNama').value = this.value;
+    });
+
+    function getVal(id) { return parseFloat(document.getElementById(id).value); }
+
+    function updateCodeOutput() {
+        document.getElementById('codeOutput').innerHTML =
+            `H * ${getVal('slNoSertif').toFixed(3)}  ← No. Sertifikat<br>` +
+            `H * ${getVal('slNama').toFixed(3)}  ← Nama<br>` +
+            `H * ${getVal('slGaris').toFixed(3)}  ← Garis bawah nama<br>` +
+            `H * ${getVal('slNim').toFixed(3)}  ← NIM<br>` +
+            `H * ${getVal('slProdi').toFixed(3)}  ← Prodi<br>` +
+            `W * ${getVal('slLinePad').toFixed(3)}  ← Padding garis`;
+    }
+    updateCodeOutput();
+
+    function resetSliders() {
+        const defaults = {
+            slNoSertif: 0.408, slNama: 0.548, slGaris: 0.562,
+            slNim: 0.610, slProdi: 0.642, slLinePad: 0.080
+        };
+        Object.entries(defaults).forEach(([id, val]) => {
+            document.getElementById(id).value = val;
+        });
+        sliders.forEach(({ sl, lbl }) => {
+            document.getElementById(lbl).textContent =
+                parseFloat(document.getElementById(sl).value).toFixed(3);
+        });
+        updateCodeOutput();
+    }
+
+    // ── Render preview ───────────────────────────────────
+    async function renderPreview() {
+        const status  = document.getElementById('statusMsg');
+        const canvas  = document.getElementById('previewCanvas');
+        const emptyMsg = document.getElementById('emptyMsg');
+        status.textContent = '⏳ Memuat template & font...';
+
+        const nama  = document.getElementById('inputNama').value.trim().toUpperCase() || 'NAMA MAHASISWA';
+        const nim   = document.getElementById('inputNim').value.trim()  || '0000000';
+        const prodi = document.getElementById('inputProdi').value.trim().toUpperCase() || 'PROGRAM STUDI';
+        const noSertif = `${nim.slice(-3)}/PKKMB/UPP/IX/2026`;
+
+        // Load font Carlito
+        try {
+            if (!document.fonts.check('16px Carlito')) {
+                const fontN = new FontFace('Carlito', 'url(https://fonts.gstatic.com/s/carlito/v3/3Jn9SDPw3m-pk039PDK.woff2)');
+                const fontB = new FontFace('Carlito', 'url(https://fonts.gstatic.com/s/carlito/v3/3Jn4SDPw3m-pk039BIykaQ.woff2)', { weight: '700' });
+                await Promise.all([
+                    fontN.load().then(f => document.fonts.add(f)),
+                    fontB.load().then(f => document.fonts.add(f))
+                ]);
+            }
+        } catch(e) { console.warn('Font Carlito gagal, pakai Arial:', e); }
+
+        // Load gambar template
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        try {
+            await new Promise((res, rej) => {
+                img.onload  = res;
+                img.onerror = rej;
+                img.src = 'public/img/seritifikat.asli.png?' + Date.now();
+            });
+        } catch(e) {
+            status.textContent = '❌ Gagal load template: ' + e.message + '. Pastikan file ada di public/img/seritifikat.asli.png dan buka via server (bukan file://)';
+            return;
+        }
+
+        canvas.width  = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        const W   = canvas.width;
+        const H   = canvas.height;
+
+        ctx.drawImage(img, 0, 0);
+        ctx.textAlign = 'center';
+
+        const fontCalibri = "Carlito, Calibri, Arial, sans-serif";
+        const safeWidth   = W * 0.60;
+        const scale = W / 2480;
+        const px12  = Math.round(12 * scale * 3.78);
+        const px28  = Math.round(28 * scale * 3.78);
+
+        function fitText(text, fontStyle, sizePx, maxWidth) {
+            let size = sizePx;
+            ctx.font = `${fontStyle} ${size}px ${fontCalibri}`;
+            while (ctx.measureText(text).width > maxWidth && size > 8) {
+                size -= 1;
+                ctx.font = `${fontStyle} ${size}px ${fontCalibri}`;
+            }
+            return size;
+        }
+
+        // Posisi dari slider
+        const posNoSertif = getVal('slNoSertif');
+        const posNama     = getVal('slNama');
+        const posGaris    = getVal('slGaris');
+        const posNim      = getVal('slNim');
+        const posProdi    = getVal('slProdi');
+        const linePad     = getVal('slLinePad');
+
+        // No. Sertifikat
+        ctx.fillStyle = '#444444';
+        ctx.font = `normal ${px12}px ${fontCalibri}`;
+        ctx.fillText(`No. ${noSertif}`, W / 2, Math.round(H * posNoSertif));
+
+        // Nama
+        // fitText set ctx.font otomatis, langsung fillText
+        fitText(nama, 'bold', px28, safeWidth);
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillText(nama, W / 2, Math.round(H * posNama));
+
+        // Garis bawah nama — ukur SETELAH fitText set font
+        const nameW  = ctx.measureText(nama).width;
+        const lineY  = Math.round(H * posGaris);
+        const lPad   = Math.round(W * linePad);
+        ctx.beginPath();
+        ctx.moveTo(W / 2 - nameW / 2 - lPad, lineY);
+        ctx.lineTo(W / 2 + nameW / 2 + lPad, lineY);
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth   = Math.max(1, Math.round(1.5 * scale));
+        ctx.stroke();
+
+        // NIM
+        ctx.fillStyle = '#222222';
+        ctx.font = `normal ${px12}px ${fontCalibri}`;
+        ctx.fillText(`NIM : ${nim}`, W / 2, Math.round(H * posNim));
+
+        // Prodi
+        const prodiText = `PRODI : ${prodi}`;
+        fitText(prodiText, 'normal', px12, safeWidth);
+        ctx.fillStyle = '#222222';
+        ctx.fillText(prodiText, W / 2, Math.round(H * posProdi));
+
+        // Tampilkan
+        emptyMsg.style.display = 'none';
+        canvas.style.display   = 'block';
+        document.getElementById('btnDownload').disabled = false;
+        status.textContent = `✅ Preview OK — canvas ${W}×${H}px | px12=${px12}px | px28=${px28}px`;
+    }
+
+    // ── Download ─────────────────────────────────────────
+    function downloadSertif() {
+        const canvas = document.getElementById('previewCanvas');
+        const nim = document.getElementById('inputNim').value.trim() || '0000000';
+        const link = document.createElement('a');
+        link.download = `TEST_Sertifikat_${nim}.png`;
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+    }
+</script>
+</body>
+</html>
