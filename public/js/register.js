@@ -1,4 +1,4 @@
-// Registration Page Logic
+﻿// Registration Page Logic
 
 let facultiesData = [];
 let studyProgramsData = [];
@@ -329,31 +329,29 @@ async function konfirmasiDanDaftar() {
 
         submitText.textContent = 'Menyimpan data...';
 
-        // 2. Insert into user_roles table
+        // 2 & 3. Atomic insert menggunakan RPC (cegah race condition)
         await retryOperation(async () => {
-            const { error } = await supabase
-                .from('user_roles')
-                .insert({ user_id: userId, role: 'MAHASISWA' });
-            if (error) throw new Error('Gagal menyimpan role pengguna');
-        });
-
-        // 3. Insert into students table
-        await retryOperation(async () => {
-            const { error } = await supabase
-                .from('students')
-                .insert({
-                    user_id: userId,
-                    nim: nim,
-                    nama_lengkap: namaLengkap,
-                    fakultas_id: fakultasId,
-                    prodi_id: prodiId,
-                    status: 'ACTIVE'
+            const { data: result, error: rpcError } = await supabase
+                .rpc('register_student_atomic', {
+                    p_user_id: userId,
+                    p_nim: nim,
+                    p_nama_lengkap: namaLengkap,
+                    p_fakultas_id: fakultasId,
+                    p_prodi_id: prodiId
                 });
-            if (error) {
-                if (error.message.includes('unique') || error.code === '23505') {
-                    throw new Error('NIM sudah terdaftar. Gunakan NIM yang berbeda.');
+            
+            if (rpcError) {
+                console.error('RPC error:', rpcError);
+                throw new Error('Gagal menyimpan data: ' + rpcError.message);
+            }
+            
+            // Cek response dari function
+            if (!result.success) {
+                if (result.error_code === 'NIM_DUPLICATE') {
+                    throw new Error('NIM sudah terdaftar oleh mahasiswa lain. Periksa kembali NIM Anda.');
+                } else {
+                    throw new Error(result.message || 'Gagal menyimpan data');
                 }
-                throw new Error('Gagal menyimpan data mahasiswa');
             }
         });
 
@@ -405,4 +403,4 @@ function showAlert(message, type = 'info') {
     alertContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-console.log('✓ Register.js loaded (with NIM validation before auth)');
+console.log('✓ Register.js loaded (with atomic RPC registration)');
