@@ -215,39 +215,73 @@ async function retryOperation(operation, maxRetries = 3, delayMs = 2000) {
     }
 }
 
-// Handle form submission
+// Handle form submission — tampilkan modal konfirmasi dulu
 document.getElementById('registerForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    
-    // Prevent double submission
-    if (isSubmitting) {
-        console.log('Already submitting, please wait...');
-        return;
-    }
-    
-    // Validate form
-    if (!validateForm()) {
-        return;
-    }
-    
+
+    if (isSubmitting) return;
+
+    // Validasi form dulu
+    if (!validateForm()) return;
+
+    // Ambil data untuk ditampilkan di modal
+    const nim       = document.getElementById('nim').value.trim();
+    const nama      = document.getElementById('namaLengkap').value.trim();
+    const email     = document.getElementById('email').value.trim();
+    const fakultasEl = document.getElementById('fakultas');
+    const prodiEl    = document.getElementById('prodi');
+    const fakultasText = fakultasEl.options[fakultasEl.selectedIndex]?.text || '-';
+    const prodiText    = prodiEl.options[prodiEl.selectedIndex]?.text || '-';
+
+    // Isi tabel konfirmasi
+    document.getElementById('cfNim').textContent      = nim;
+    document.getElementById('cfNama').textContent     = nama;
+    document.getElementById('cfEmail').textContent    = email;
+    document.getElementById('cfFakultas').textContent = fakultasText;
+    document.getElementById('cfProdi').textContent    = prodiText;
+
+    // Tampilkan modal
+    document.getElementById('modalKonfirmasi').classList.add('active');
+});
+
+// Tutup modal (kembali & perbaiki)
+function tutupModal() {
+    document.getElementById('modalKonfirmasi').classList.remove('active');
+}
+
+// Tutup modal jika klik area luar
+document.getElementById('modalKonfirmasi').addEventListener('click', function(e) {
+    if (e.target === this) tutupModal();
+});
+
+// Konfirmasi → jalankan pendaftaran
+async function konfirmasiDanDaftar() {
+    // Tutup modal & kunci tombol konfirmasi
+    const btnKonfirmasi = document.getElementById('btnKonfirmasi');
+    btnKonfirmasi.disabled = true;
+    btnKonfirmasi.textContent = 'Memproses...';
+    document.getElementById('modalKonfirmasi').classList.remove('active');
+
+    if (isSubmitting) return;
+
     // Get form data
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    const nim = document.getElementById('nim').value.trim();
+    const email     = document.getElementById('email').value.trim();
+    const password  = document.getElementById('password').value;
+    const nim       = document.getElementById('nim').value.trim();
     const namaLengkap = document.getElementById('namaLengkap').value.trim();
-    const fakultasId = document.getElementById('fakultas').value;
-    const prodiId = document.getElementById('prodi').value;
-    
+    const fakultasId  = document.getElementById('fakultas').value;
+    const prodiId     = document.getElementById('prodi').value;
+
     // Show loading
     isSubmitting = true;
-    const submitBtn = document.getElementById('submitBtn');
-    const submitText = document.getElementById('submitText');
+    const submitBtn     = document.getElementById('submitBtn');
+    const submitText    = document.getElementById('submitText');
     const submitSpinner = document.getElementById('submitSpinner');
-    
+
     submitBtn.disabled = true;
     submitText.textContent = 'Sedang memproses...';
     submitSpinner.style.display = 'inline-block';
-    
+
     try {
         // 0. CEK NIM DULU sebelum create auth user (prevent email terbakar!)
         submitText.textContent = 'Memeriksa NIM...';
@@ -256,72 +290,54 @@ document.getElementById('registerForm').addEventListener('submit', async functio
             .select('nim')
             .eq('nim', nim)
             .maybeSingle();
-        
+
         if (checkError && checkError.code !== 'PGRST116') {
-            // PGRST116 = no rows returned (NIM belum ada, OK)
             console.error('Check NIM error:', checkError);
             throw new Error('Gagal memeriksa NIM. Silakan coba lagi.');
         }
-        
+
         if (existingStudent) {
-            // NIM sudah terdaftar!
             throw new Error('NIM sudah terdaftar oleh mahasiswa lain. Periksa kembali NIM Anda atau hubungi panitia.');
         }
-        
+
         // NIM belum ada, lanjut create user
         submitText.textContent = 'Membuat akun...';
-        
+
         // 1. Create user in Supabase Auth with retry
         const authData = await retryOperation(async () => {
             const { data, error } = await supabase.auth.signUp({
                 email: email,
                 password: password,
                 options: {
-                    data: {
-                        nim: nim,
-                        nama_lengkap: namaLengkap
-                    }
+                    data: { nim: nim, nama_lengkap: namaLengkap }
                 }
             });
-            
+
             if (error) {
-                // Check for specific errors
                 if (error.message.includes('already registered') || error.message.includes('already exists')) {
                     throw new Error('Email sudah terdaftar. Gunakan email lain atau login.');
                 }
                 throw error;
             }
-            
-            if (!data.user) {
-                throw new Error('Gagal membuat akun. Silakan coba lagi.');
-            }
-            
+
+            if (!data.user) throw new Error('Gagal membuat akun. Silakan coba lagi.');
             return data;
         });
-        
+
         const userId = authData.user.id;
-        
-        // Small delay to ensure auth propagation
         await sleep(500);
-        
+
         submitText.textContent = 'Menyimpan data...';
-        
-        // 2. Insert into user_roles table with retry
+
+        // 2. Insert into user_roles table
         await retryOperation(async () => {
             const { error } = await supabase
                 .from('user_roles')
-                .insert({
-                    user_id: userId,
-                    role: 'MAHASISWA'
-                });
-            
-            if (error) {
-                console.error('Role insert error:', error);
-                throw new Error('Gagal menyimpan role pengguna');
-            }
+                .insert({ user_id: userId, role: 'MAHASISWA' });
+            if (error) throw new Error('Gagal menyimpan role pengguna');
         });
-        
-        // 3. Insert into students table with retry
+
+        // 3. Insert into students table
         await retryOperation(async () => {
             const { error } = await supabase
                 .from('students')
@@ -333,36 +349,25 @@ document.getElementById('registerForm').addEventListener('submit', async functio
                     prodi_id: prodiId,
                     status: 'ACTIVE'
                 });
-            
             if (error) {
-                console.error('Student insert error:', error);
-                
-                // Check for duplicate NIM
                 if (error.message.includes('unique') || error.code === '23505') {
                     throw new Error('NIM sudah terdaftar. Gunakan NIM yang berbeda.');
                 }
-                
                 throw new Error('Gagal menyimpan data mahasiswa');
             }
         });
-        
+
         // Success!
         submitText.textContent = 'Berhasil! Mengalihkan...';
         submitSpinner.style.display = 'none';
-        
         showAlert('✓ Registrasi berhasil! Anda sudah bisa login dan melakukan absensi.', 'success');
-        
-        // Redirect to login after 2 seconds
-        setTimeout(() => {
-            window.location.href = 'login.html';
-        }, 2000);
-        
+
+        setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+
     } catch (error) {
         console.error('Registration error:', error);
-        
-        // User-friendly error messages
+
         let errorMessage = 'Gagal melakukan registrasi. ';
-        
         if (error.message.includes('sudah terdaftar')) {
             errorMessage = error.message;
         } else if (error.message.includes('network') || error.message.includes('fetch')) {
@@ -372,16 +377,19 @@ document.getElementById('registerForm').addEventListener('submit', async functio
         } else {
             errorMessage += error.message || 'Silakan coba lagi dalam beberapa saat.';
         }
-        
+
         showAlert(errorMessage, 'danger');
-        
-        // Re-enable button
+
         isSubmitting = false;
         submitBtn.disabled = false;
         submitText.textContent = 'Daftar Sekarang';
         submitSpinner.style.display = 'none';
+    } finally {
+        // Reset tombol konfirmasi untuk pemakaian berikutnya
+        btnKonfirmasi.disabled = false;
+        btnKonfirmasi.textContent = '✓ Ya, Data Sudah Benar';
     }
-});
+}
 
 // Show alert
 function showAlert(message, type = 'info') {
