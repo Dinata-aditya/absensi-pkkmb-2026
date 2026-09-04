@@ -1101,12 +1101,20 @@ async function simpanResetPassword() {
 
     try {
         // Pakai Supabase Admin API via RPC untuk update password
-        const { error } = await supabase.rpc('admin_reset_password', {
+        const { data, error } = await supabase.rpc('admin_reset_password', {
             p_user_id: resetTargetStudent.user_id,
             p_new_password: pwBaru
         });
 
-        if (error) throw error;
+        if (error) {
+            console.error('RPC error:', error);
+            throw new Error(error.message || 'Gagal memanggil function reset password');
+        }
+
+        // Check if function returned success
+        if (data && data.success === false) {
+            throw new Error(data.message || 'Reset password gagal');
+        }
 
         alert(`✅ Password ${resetTargetStudent.nama_lengkap} berhasil direset!`);
         closeModal('modalResetPassword');

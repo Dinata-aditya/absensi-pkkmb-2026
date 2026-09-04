@@ -249,6 +249,28 @@ document.getElementById('registerForm').addEventListener('submit', async functio
     submitSpinner.style.display = 'inline-block';
     
     try {
+        // 0. CEK NIM DULU sebelum create auth user (prevent email terbakar!)
+        submitText.textContent = 'Memeriksa NIM...';
+        const { data: existingStudent, error: checkError } = await supabase
+            .from('students')
+            .select('nim')
+            .eq('nim', nim)
+            .maybeSingle();
+        
+        if (checkError && checkError.code !== 'PGRST116') {
+            // PGRST116 = no rows returned (NIM belum ada, OK)
+            console.error('Check NIM error:', checkError);
+            throw new Error('Gagal memeriksa NIM. Silakan coba lagi.');
+        }
+        
+        if (existingStudent) {
+            // NIM sudah terdaftar!
+            throw new Error('NIM sudah terdaftar oleh mahasiswa lain. Periksa kembali NIM Anda atau hubungi panitia.');
+        }
+        
+        // NIM belum ada, lanjut create user
+        submitText.textContent = 'Membuat akun...';
+        
         // 1. Create user in Supabase Auth with retry
         const authData = await retryOperation(async () => {
             const { data, error } = await supabase.auth.signUp({
@@ -281,6 +303,8 @@ document.getElementById('registerForm').addEventListener('submit', async functio
         
         // Small delay to ensure auth propagation
         await sleep(500);
+        
+        submitText.textContent = 'Menyimpan data...';
         
         // 2. Insert into user_roles table with retry
         await retryOperation(async () => {
@@ -373,4 +397,4 @@ function showAlert(message, type = 'info') {
     alertContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-console.log('✓ Register.js loaded (with retry mechanism)');
+console.log('✓ Register.js loaded (with NIM validation before auth)');
