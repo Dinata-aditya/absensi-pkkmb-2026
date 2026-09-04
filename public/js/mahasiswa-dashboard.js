@@ -341,8 +341,21 @@ async function downloadSertifikat() {
         const nim   = studentData.nim;
         const prodi = (studentData.study_programs?.nama || '-').toUpperCase();
 
-        // No seri: 3 digit terakhir NIM, misal 2636062 → 062/PKKMB/09.2026
-        const noSertif = `${nim.slice(-3)}/PKKMB/09.2026`;
+        // No seri: 3 digit terakhir NIM, format: 000/PKKMB/UPP/IX/2026
+        const noSertif = `${nim.slice(-3)}/PKKMB/UPP/IX/2026`;
+
+        // Load font Carlito (pengganti Calibri, metric-compatible) dari Google Fonts
+        // Carlito dibuat sebagai drop-in replacement Calibri oleh Google
+        try {
+            if (!document.fonts.check('16px Carlito')) {
+                const fontNormal = new FontFace('Carlito', 'url(https://fonts.gstatic.com/s/carlito/v3/3Jn9SDPw3m-pk039PDK.woff2)');
+                const fontBold   = new FontFace('Carlito', 'url(https://fonts.gstatic.com/s/carlito/v3/3Jn4SDPw3m-pk039BIykaQ.woff2)', { weight: '700' });
+                await Promise.all([
+                    fontNormal.load().then(f => document.fonts.add(f)),
+                    fontBold.load().then(f => document.fonts.add(f))
+                ]);
+            }
+        } catch(e) { console.warn('Font Carlito gagal dimuat, fallback ke Arial:', e); }
 
         // Load gambar template
         const img = new Image();
@@ -366,56 +379,59 @@ async function downloadSertifikat() {
 
         ctx.textAlign = 'center';
 
+        // Font Carlito (pengganti Calibri, fallback Arial)
+        const fontCalibri = "Carlito, Calibri, Arial, sans-serif";
+
         // ── Helper: auto-fit text dalam batas maxWidth ──
-        function fitText(text, fontStyle, maxSize, minSize, maxWidth, fontFamily) {
-            let size = maxSize;
-            ctx.font = `${fontStyle} ${size}px ${fontFamily}`;
-            while (ctx.measureText(text).width > maxWidth && size > minSize) {
+        function fitText(text, fontStyle, sizePx, maxWidth) {
+            let size = sizePx;
+            ctx.font = `${fontStyle} ${size}px ${fontCalibri}`;
+            while (ctx.measureText(text).width > maxWidth && size > 8) {
                 size -= 1;
-                ctx.font = `${fontStyle} ${size}px ${fontFamily}`;
+                ctx.font = `${fontStyle} ${size}px ${fontCalibri}`;
             }
             return size;
         }
 
-        // Area aman untuk teks (80% dari lebar canvas agar tidak keluar batas)
-        const safeWidth = W * 0.58;
+        // Area aman untuk teks (70% dari lebar canvas)
+        const safeWidth = W * 0.60;
 
-        // ── No. Sertifikat ──────────────────────────
-        ctx.fillStyle = '#555555';
-        ctx.font      = `normal ${Math.round(W * 0.014)}px Arial, sans-serif`;
+        // Skala font proporsional terhadap ukuran canvas
+        // Gambar referensi ~2480px lebar → scale factor
+        const scale = W / 2480;
+        const px12  = Math.round(12 * scale * 3.78); // 12pt → px (1pt = 1.333px di 96dpi, tapi canvas pakai px)
+        const px28  = Math.round(28 * scale * 3.78);
+
+        // ── No. Sertifikat (font 12, Calibri) ───────
+        ctx.fillStyle = '#444444';
+        ctx.font      = `normal ${px12}px ${fontCalibri}`;
         ctx.fillText(`No. ${noSertif}`, W / 2, Math.round(H * 0.408));
 
-        // ── Nama Mahasiswa (auto-fit) ────────────────
-        // Ukuran max 3.2%, min 1.5% dari lebar canvas
-        const nameMaxPx = Math.round(W * 0.032);
-        const nameMinPx = Math.round(W * 0.015);
-        const nameFontSize = fitText(nama, 'bold', nameMaxPx, nameMinPx, safeWidth, "'Times New Roman', serif");
+        // ── Nama Mahasiswa (font 28 bold, Calibri, auto-fit) ──
+        const nameFontSize = fitText(nama, 'bold', px28, safeWidth);
         ctx.fillStyle = '#1a1a1a';
-        ctx.fillText(nama, W / 2, Math.round(H * 0.560));
+        ctx.fillText(nama, W / 2, Math.round(H * 0.548));
 
         // ── Garis bawah nama ────────────────────────
-        const nameW     = ctx.measureText(nama).width;
-        const lineY     = Math.round(H * 0.572);
-        const linePad   = Math.round(W * 0.015);
+        const nameW   = ctx.measureText(nama).width;
+        const lineY   = Math.round(H * 0.562);
+        const linePad = Math.round(W * 0.08);
         ctx.beginPath();
         ctx.moveTo(W / 2 - nameW / 2 - linePad, lineY);
         ctx.lineTo(W / 2 + nameW / 2 + linePad, lineY);
         ctx.strokeStyle = '#1a1a1a';
-        ctx.lineWidth   = 1.5;
+        ctx.lineWidth   = Math.max(1, Math.round(1.5 * scale));
         ctx.stroke();
 
-        // ── NIM ─────────────────────────────────────
+        // ── NIM (font 12, Calibri) ───────────────────
         ctx.fillStyle = '#222222';
-        const nimSize = Math.round(W * 0.017);
-        ctx.font      = `normal ${nimSize}px Arial, sans-serif`;
+        ctx.font      = `normal ${px12}px ${fontCalibri}`;
         ctx.fillText(`NIM : ${nim}`, W / 2, Math.round(H * 0.610));
 
-        // ── Prodi (auto-fit) ─────────────────────────
-        const prodiText   = `PRODI : ${prodi}`;
-        const prodiMaxPx  = Math.round(W * 0.019);
-        const prodiMinPx  = Math.round(W * 0.012);
-        fitText(prodiText, 'bold', prodiMaxPx, prodiMinPx, safeWidth, 'Arial, sans-serif');
-        ctx.fillStyle = '#111111';
+        // ── Prodi (font 12, Calibri, auto-fit) ───────
+        const prodiText = `PRODI : ${prodi}`;
+        fitText(prodiText, 'normal', px12, safeWidth);
+        ctx.fillStyle = '#222222';
         ctx.fillText(prodiText, W / 2, Math.round(H * 0.642));
 
         // Download sebagai PNG
