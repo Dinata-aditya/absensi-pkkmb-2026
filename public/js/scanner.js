@@ -30,34 +30,58 @@ let isScanning = true;
     startScanner();
 })();
 
+// Detect if device is low-end (small screen or low memory)
+function isLowEndDevice() {
+    const screenW = window.screen.width;
+    const ram = navigator.deviceMemory; // GB, undefined if not supported
+    return screenW <= 400 || (ram !== undefined && ram <= 2);
+}
+
 // Start QR scanner
 function startScanner() {
     html5QrcodeScanner = new Html5Qrcode("qr-reader");
-    
+
+    const lowEnd = isLowEndDevice();
+
+    // Lower fps and qrbox for old/low-end devices to prevent freeze
     const config = {
-        fps: 10,
-        qrbox: { width: 320, height: 320 },
-        aspectRatio: 1.0
+        fps: lowEnd ? 5 : 10,
+        qrbox: lowEnd
+            ? { width: 200, height: 200 }   // smaller box for small screens
+            : { width: 280, height: 280 },  // reduced from 320 for all devices
+        // Do NOT force aspectRatio — many old cameras crash with it
     };
-    
-    // Start scanning
+
+    // Try back camera first
     html5QrcodeScanner.start(
-        { facingMode: "environment" }, // Use back camera
+        { facingMode: "environment" },
         config,
         onScanSuccess,
         onScanFailure
     ).catch(err => {
-        console.error('Scanner start error:', err);
-        
-        // Try with front camera if back camera fails
+        console.warn('Back camera failed, trying any camera:', err);
+
+        // Try without specifying camera (let browser pick)
         html5QrcodeScanner.start(
-            { facingMode: "user" },
+            { facingMode: "environment", advanced: [{ facingMode: "environment" }] },
             config,
             onScanSuccess,
             onScanFailure
         ).catch(err2 => {
-            console.error('Scanner start error (front camera):', err2);
-            showResult(false, 'Gagal Membuka Kamera', 'Pastikan Anda memberikan izin akses kamera.');
+            console.warn('Retrying with front camera:', err2);
+
+            // Last resort: front camera
+            html5QrcodeScanner.start(
+                { facingMode: "user" },
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).catch(err3 => {
+                console.error('All camera attempts failed:', err3);
+                showResult(false, 'Kamera Tidak Bisa Dibuka',
+                    'Pastikan browser diberi izin akses kamera.\n\n' +
+                    'Coba:\n1. Refresh halaman ini\n2. Buka di browser Chrome\n3. Izinkan akses kamera di pengaturan browser');
+            });
         });
     });
 }
@@ -69,11 +93,16 @@ async function onScanSuccess(decodedText, decodedResult) {
     isScanning = false;
     
     // Stop scanner
-    html5QrcodeScanner.stop();
+    try { html5QrcodeScanner.stop(); } catch(e) {}
     
     try {
         // Parse QR data
-        const qrData = JSON.parse(decodedText);
+        let qrData;
+        try {
+            qrData = JSON.parse(decodedText);
+        } catch(e) {
+            throw new Error('QR Code tidak valid atau format salah');
+        }
         
         if (!qrData.session_id || !qrData.token) {
             throw new Error('QR Code tidak valid');
@@ -88,11 +117,8 @@ async function onScanSuccess(decodedText, decodedResult) {
             p_token: qrData.token
         });
         
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
         
-        // Check response
         if (data && data.success) {
             const attendanceData = data.data;
             showResult(
@@ -106,50 +132,38 @@ async function onScanSuccess(decodedText, decodedResult) {
         
     } catch (error) {
         console.error('Scan processing error:', error);
-        
-        let errorMessage = 'Terjadi kesalahan saat memproses QR Code';
-        
-        if (error.message) {
-            errorMessage = error.message;
-        } else if (error instanceof SyntaxError) {
-            errorMessage = 'QR Code tidak valid atau format salah';
-        }
-        
-        showResult(false, 'Scan Gagal', errorMessage);
+        showResult(false, 'Scan Gagal', error.message || 'Terjadi kesalahan saat memproses QR Code');
     }
 }
 
-// On scan failure (not an error, just no QR detected)
+// On scan failure (not an error, just no QR detected yet — called frequently)
 function onScanFailure(error) {
-    // Silently ignore - this is called frequently when no QR is detected
+    // Silently ignore
 }
 
 // Show result
 function showResult(success, title, message) {
     const container = document.getElementById('resultContainer');
-    const icon = document.getElementById('resultIcon');
-    const titleEl = document.getElementById('resultTitle');
+    const icon      = document.getElementById('resultIcon');
+    const titleEl   = document.getElementById('resultTitle');
     const messageEl = document.getElementById('resultMessage');
     
     if (success === null) {
-        // Loading state
         icon.className = 'result-icon';
         icon.style.backgroundColor = '#dbeafe';
         icon.style.color = '#1e40af';
-        icon.innerHTML = '<div class="spinner spinner-primary" style="width: 40px; height: 40px;"></div>';
+        icon.innerHTML = '<div class="spinner spinner-primary" style="width:40px;height:40px;"></div>';
     } else if (success) {
-        // Success
         icon.className = 'result-icon result-success';
         icon.textContent = '✓';
     } else {
-        // Error
         icon.className = 'result-icon result-error';
         icon.textContent = '✗';
     }
     
-    titleEl.textContent = title;
+    titleEl.textContent  = title;
     messageEl.textContent = message;
-    messageEl.style.whiteSpace = 'pre-line'; // Allow line breaks
+    messageEl.style.whiteSpace = 'pre-line';
     
     container.classList.add('show');
 }
@@ -162,18 +176,15 @@ function closeResult() {
 // Format date time
 function formatDateTime(dateTimeString) {
     const date = new Date(dateTimeString);
-    const dateOptions = { year: 'numeric', month: 'short', day: 'numeric' };
-    const timeOptions = { hour: '2-digit', minute: '2-digit' };
-    return date.toLocaleDateString('id-ID', dateOptions) + ' ' + date.toLocaleTimeString('id-ID', timeOptions);
+    return date.toLocaleDateString('id-ID', { year:'numeric', month:'short', day:'numeric' })
+         + ' ' + date.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
 }
 
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
     if (html5QrcodeScanner) {
-        html5QrcodeScanner.stop().catch(err => {
-            console.error('Scanner stop error:', err);
-        });
+        html5QrcodeScanner.stop().catch(() => {});
     }
 });
 
-console.log('✓ Scanner loaded');
+console.log('[scanner] loaded, low-end device:', isLowEndDevice());
