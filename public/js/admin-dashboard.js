@@ -42,12 +42,13 @@ async function loadProdi() {
 }
 
 async function loadStudents() {
-    // Use RPC to bypass PostgREST 1000-row hard cap
+    // Use RPC (RETURNS JSON) - bypasses PostgREST 1000-row hard cap
     const { data, error } = await supabase.rpc('get_all_students');
     if (error) { console.error('loadStudents error:', error); return; }
 
-    // Map RPC flat result to same shape as before (nested faculties/study_programs)
-    allStudents = (data || []).map(s => ({
+    // RETURNS JSON gives us a JSON array directly
+    const rows = Array.isArray(data) ? data : [];
+    allStudents = rows.map(s => ({
         ...s,
         faculties:      { id: s.fakultas_id, nama: s.fakultas_nama },
         study_programs: { id: s.prodi_id,    nama: s.prodi_nama    }
@@ -284,7 +285,7 @@ async function loadAbsensiPerProdi() {
 
     // Get all active students via RPC (bypass PostgREST 1000-row cap)
     const { data: allMhsRaw } = await supabase.rpc('get_all_students');
-    const allMhs = (allMhsRaw || [])
+    const allMhs = (Array.isArray(allMhsRaw) ? allMhsRaw : [])
         .filter(s => s.status === 'ACTIVE')
         .map(s => ({
             ...s,
@@ -852,7 +853,7 @@ async function cetakLembarAbsensi() {
         const { data: allMhsRaw, error: mhsErr } = await supabase.rpc('get_all_students');
         if (mhsErr) throw mhsErr;
 
-        let mhsList = (allMhsRaw || [])
+        let mhsList = (Array.isArray(allMhsRaw) ? allMhsRaw : [])
             .filter(s => s.status === 'ACTIVE')
             .map(s => ({
                 ...s,
