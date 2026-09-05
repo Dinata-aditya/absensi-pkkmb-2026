@@ -1,11 +1,29 @@
 // Authentication Utilities
 
 /**
+ * Wait for Supabase client (initialized by supabase-loader.js)
+ */
+function _waitForClient() {
+    return new Promise((resolve, reject) => {
+        if (window._supabaseReady) { resolve(); return; }
+        const start = Date.now();
+        const t = setInterval(() => {
+            if (window._supabaseReady) {
+                clearInterval(t); resolve();
+            } else if (window._supabaseLoadFailed || Date.now() - start > 15000) {
+                clearInterval(t); reject(new Error('Supabase client not ready'));
+            }
+        }, 100);
+    });
+}
+
+/**
  * Check if user is authenticated
  * @returns {Promise<Object|null>} Session object or null
  */
 async function checkAuth() {
     try {
+        await _waitForClient();
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {

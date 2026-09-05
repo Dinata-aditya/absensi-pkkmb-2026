@@ -1,33 +1,52 @@
 // Login Page Logic
 
 /**
- * Initialize login page after Supabase client is ready
+ * Wait until window._supabaseReady is true (set by supabase-loader.js)
+ * Polls every 100ms, gives up after 15s
  */
-async function initLoginPage() {
-    // Check if already logged in
-    const session = await checkAuth();
-    if (session) {
-        const role = await getUserRole(session.user.id);
-        if (role) redirectBasedOnRole(role);
-    }
-}
-
-// Wait for Supabase client to be ready before checking auth
-if (window.supabaseClientReady) {
-    // Already ready
-    initLoginPage();
-} else {
-    // Wait for ready event
-    window.addEventListener('supabase-client:ready', function() {
-        initLoginPage();
+function waitForSupabaseClient() {
+    return new Promise((resolve, reject) => {
+        if (window._supabaseReady) { resolve(); return; }
+        const start = Date.now();
+        const t = setInterval(() => {
+            if (window._supabaseReady) {
+                clearInterval(t);
+                resolve();
+            } else if (window._supabaseLoadFailed || Date.now() - start > 15000) {
+                clearInterval(t);
+                reject(new Error('Supabase tidak dapat dimuat'));
+            }
+        }, 100);
     });
 }
 
-// Handle form submission
-document.getElementById('loginForm').addEventListener('submit', async function(e) {
+// ── Auto-redirect if already logged in ──────────────────────────────────────
+// Only run ONCE when the page first loads (not in a loop)
+(async function checkExistingSession() {
+    try {
+        await waitForSupabaseClient();
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return; // not logged in → stay on login page
+
+        // User already has a session — get role and redirect
+        const role = await getUserRole(session.user.id);
+        if (role) {
+            redirectBasedOnRole(role);
+        }
+        // If role is null (missing user_roles row), stay on login page
+        // so the user can login again instead of looping forever
+    } catch (e) {
+        // Ignore — if supabase fails to load, user just sees the form
+        console.warn('[login] session check skipped:', e.message);
+    }
+})();
+
+// ── Form submission ──────────────────────────────────────────────────────────
+document.getElementById('loginForm').addEventListener('submit', async function (e) {
     e.preventDefault();
 
-    // Clear errors
+    // Clear previous errors
     document.querySelectorAll('.form-error').forEach(el => el.textContent = '');
     document.querySelectorAll('.form-input').forEach(el => el.classList.remove('error'));
     document.getElementById('alertContainer').innerHTML = '';
@@ -35,34 +54,28 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     const nimOrEmail = document.getElementById('nim').value.trim();
     const password   = document.getElementById('password').value;
 
-    if (!nimOrEmail) {
-        showFieldError('nim', 'NIM atau Email wajib diisi');
-        return;
-    }
-    if (!password) {
-        showFieldError('password', 'Password wajib diisi');
-        return;
-    }
+    if (!nimOrEmail) { showFieldError('nim', 'NIM atau Email wajib diisi'); return; }
+    if (!password)   { showFieldError('password', 'Password wajib diisi');  return; }
 
-    // Show loading
+    // Show loading state
     const submitBtn     = document.getElementById('submitBtn');
     const submitText    = document.getElementById('submitText');
     const submitSpinner = document.getElementById('submitSpinner');
-    submitBtn.disabled  = true;
-    submitText.style.display  = 'none';
+    submitBtn.disabled          = true;
+    submitText.style.display    = 'none';
     submitSpinner.style.display = 'inline-block';
 
     try {
-        let email = '';
+        // Make sure client is ready
+        await waitForSupabaseClient();
 
-        // Deteksi: kalau ada @ berarti email (admin), kalau tidak berarti NIM (mahasiswa)
+        let email = '';
         const isEmail = nimOrEmail.includes('@');
 
         if (isEmail) {
-            // Admin login langsung pakai email
             email = nimOrEmail;
         } else {
-            // Mahasiswa � cari email berdasarkan NIM (pakai fungsi khusus login)
+            // Look up email by NIM
             const { data: emailData, error: nimError } = await supabase
                 .rpc('get_email_for_login', { p_nim: nimOrEmail });
 
@@ -72,7 +85,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             email = emailData;
         }
 
-        // Login dengan email + password
+        // Sign in
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
             email,
             password
@@ -87,58 +100,54 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 
         if (!authData.user) throw new Error('Login gagal. Silakan coba lagi.');
 
-        // Tunggu session benar-benar tersedia (penting untuk HP/koneksi lambat)
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Small delay to let Supabase session settle on slow connections
+        await new Promise(r => setTimeout(r, 600));
 
-        // Retry getUserRole hingga 3x dengan jeda (antisipasi koneksi lambat)
+        // Retry getUserRole up to 3x (slow mobile connections)
         let role = null;
         for (let attempt = 1; attempt <= 3; attempt++) {
             role = await getUserRole(authData.user.id);
             if (role) break;
-            if (attempt < 3) {
-                // Tunggu sebelum retry
-                await new Promise(resolve => setTimeout(resolve, 600 * attempt));
-            }
+            if (attempt < 3) await new Promise(r => setTimeout(r, 700 * attempt));
         }
 
         if (!role) {
             throw new Error(
-                'Gagal memuat data akun. Kemungkinan koneksi internet lambat.\n\n' +
-                'Silakan coba lagi. Jika masih gagal, hubungi panitia.'
+                'Akun ditemukan tapi data role belum tersedia.\n' +
+                'Silakan coba lagi dalam beberapa detik. Jika masih gagal, hubungi panitia.'
             );
         }
 
         showAlert('Login berhasil! Mengarahkan...', 'success');
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(r => setTimeout(r, 400));
         redirectBasedOnRole(role);
 
     } catch (error) {
-        console.error('Login error:', error);
-        // Pastikan error selalu tampil jelas (tidak hilang di mobile)
+        console.error('[login] error:', error);
         showAlert(error.message || 'Login gagal. Silakan coba lagi.', 'danger');
-        submitBtn.disabled = false;
-        submitText.style.display = 'inline';
+        submitBtn.disabled          = false;
+        submitText.style.display    = 'inline';
         submitSpinner.style.display = 'none';
-        // Scroll ke atas agar error terlihat di mobile
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 });
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
 function showFieldError(fieldName, message) {
-    const field     = document.getElementById(fieldName);
-    const errorSpan = document.getElementById(fieldName + 'Error');
+    const field = document.getElementById(fieldName);
+    const span  = document.getElementById(fieldName + 'Error');
     if (field) field.classList.add('error');
-    if (errorSpan) errorSpan.textContent = message;
+    if (span)  span.textContent = message;
 }
 
 function showAlert(message, type = 'info') {
-    const alertContainer = document.getElementById('alertContainer');
-    const alert = document.createElement('div');
-    alert.className = `alert alert-${type}`;
-    alert.textContent = message;
-    alertContainer.innerHTML = '';
-    alertContainer.appendChild(alert);
-    alertContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const container = document.getElementById('alertContainer');
+    const el = document.createElement('div');
+    el.className   = `alert alert-${type}`;
+    el.textContent = message;
+    container.innerHTML = '';
+    container.appendChild(el);
+    container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-console.log('? Login page loaded');
+console.log('[login] loaded');
