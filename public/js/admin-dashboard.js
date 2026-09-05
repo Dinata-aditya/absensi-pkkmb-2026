@@ -1,4 +1,4 @@
-// Admin Dashboard — clean rewrite
+﻿// Admin Dashboard â€” clean rewrite
 
 let allStudents   = [];
 let filteredStudents = [];
@@ -8,7 +8,7 @@ let allSessions   = [];
 let currentStudent = null;
 let currentSession = null;
 
-// ── Init ──────────────────────────────────────────
+// â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 (async function () {
     const auth = await protectPage('ADMIN');
     if (!auth) return;
@@ -26,7 +26,7 @@ async function loadAll() {
     loadSertifSetting();
 }
 
-// ── Loaders ──────────────────────────────────────
+// â”€â”€ Loaders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadFaculties() {
     const { data, error } = await supabase.from('faculties').select('*').order('nama');
     if (error) return error;
@@ -45,7 +45,8 @@ async function loadStudents() {
     const { data, error } = await supabase
         .from('students')
         .select('*, faculties:fakultas_id(id,nama), study_programs:prodi_id(id,nama)')
-        .order('nama_lengkap');
+        .order('nama_lengkap')
+        .range(0, 4999);
     if (error) return error;
     allStudents = data || [];
     filteredStudents = [...allStudents];
@@ -61,7 +62,7 @@ async function loadSessions() {
     populateSesiDropdowns();
 }
 
-// ── Tab switching ─────────────────────────────────
+// â”€â”€ Tab switching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function switchTab(name, btn) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -76,21 +77,21 @@ function switchTab(name, btn) {
 
 function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
-// ── Modal helpers ─────────────────────────────────
+// â”€â”€ Modal helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 window.addEventListener('click', e => {
     if (e.target.classList.contains('modal')) e.target.classList.remove('open');
 });
 
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TAB: STATISTIK
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function loadStatistik() {
     const [{ count: totalMhs }, { data: sessions }, { data: attendances }] = await Promise.all([
         supabase.from('students').select('*', { count: 'exact', head: true }).eq('status', 'ACTIVE'),
         supabase.from('attendance_sessions').select('*').order('hari_ke'),
-        supabase.from('attendances').select('session_id, status')
+        supabase.from('attendances').select('session_id, status').range(0, 9999)
     ]);
 
     const sessions_ = sessions || [];
@@ -154,9 +155,9 @@ async function loadStatistik() {
     document.getElementById('statPerHari').innerHTML = html || '<div class="empty">Belum ada data sesi</div>';
 }
 
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TAB: MAHASISWA
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function populateFacultyFilter() {
     const sel = document.getElementById('fFakultas');
     sel.innerHTML = '<option value="">Semua Fakultas</option>';
@@ -247,9 +248,9 @@ async function simpanStatusMhs() {
     await loadStudents();
 }
 
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TAB: ABSENSI PER PRODI
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function loadAbsensiPerProdi() {
     const sessionId = document.getElementById('absensiSesiFilter').value;
     const container = document.getElementById('absensiProdiContainer');
@@ -259,7 +260,7 @@ async function loadAbsensiPerProdi() {
         return;
     }
 
-    container.innerHTML = '<div class="empty">Memuat data…</div>';
+    container.innerHTML = '<div class="empty">Memuat dataâ€¦</div>';
 
     // Get all attendances for this session
     const { data: atts, error } = await supabase
@@ -281,7 +282,8 @@ async function loadAbsensiPerProdi() {
         .from('students')
         .select('id, nim, nama_lengkap, faculties:fakultas_id(nama), study_programs:prodi_id(id,nama)')
         .eq('status', 'ACTIVE')
-        .order('nama_lengkap');
+        .order('nama_lengkap')
+        .range(0, 4999);
 
     const mhsList = allMhs || [];
     const attList = atts   || [];
@@ -345,7 +347,7 @@ async function loadAbsensiPerProdi() {
                     <span class="badge badge-green">${hadir} Hadir</span>
                     <span class="badge badge-red">${alpha} Alpha</span>
                     <span class="badge badge-yellow">${belum} Belum</span>
-                    <span style="font-size:.8125rem;color:#9ca3af">▼</span>
+                    <span style="font-size:.8125rem;color:#9ca3af">â–¼</span>
                 </div>
             </div>
             <div class="prodi-body">
@@ -368,7 +370,7 @@ function toggleProdi(head) {
     const body = head.nextElementSibling;
     body.classList.toggle('open');
     const arrow = head.querySelector('span[style]');
-    if (arrow) arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
+    if (arrow) arrow.textContent = body.classList.contains('open') ? 'â–²' : 'â–¼';
 }
 
 async function ubahStatusAbsensi(attId, newStatus, sessionId) {
@@ -393,9 +395,9 @@ async function manualHadir(studentId, sessionId) {
     loadStatistik();
 }
 
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TAB: SESI
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function renderSessionsGrid() {
     const grid = document.getElementById('sessionsGrid');
     if (!allSessions.length) {
@@ -441,7 +443,7 @@ function renderSessionsGrid() {
 
 function populateSesiDropdowns() {
     const opts = allSessions.map(s =>
-        `<option value="${s.id}">${s.nama_kegiatan} – Hari ${s.hari_ke} (${s.status})</option>`
+        `<option value="${s.id}">${s.nama_kegiatan} â€“ Hari ${s.hari_ke} (${s.status})</option>`
     ).join('');
 
     const absensiSel = document.getElementById('absensiSesiFilter');
@@ -590,14 +592,14 @@ function printQR() {
     if (!url) return;
 
     const w = window.open('','','width=600,height=700');
-    w.document.write(`<!DOCTYPE html><html><head><title>QR – ${currentSession.nama_kegiatan}</title>
+    w.document.write(`<!DOCTYPE html><html><head><title>QR â€“ ${currentSession.nama_kegiatan}</title>
     <style>body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;margin:0;padding:2rem;}
     h2{color:#10b981;} img{border:1px solid #e5e7eb;padding:1rem;} p{color:#6b7280;font-size:.9rem;}</style></head>
     <body>
     <h1>Absensi PKKMB 2026</h1>
     <h2>${currentSession.nama_kegiatan}</h2>
     <p>Hari ke-${currentSession.hari_ke} &nbsp;|&nbsp; ${fmtDate(currentSession.tanggal)}</p>
-    <p>${currentSession.jam_mulai} – ${currentSession.jam_selesai}</p>
+    <p>${currentSession.jam_mulai} â€“ ${currentSession.jam_selesai}</p>
     <img src="${url}">
     <p>Scan QR code untuk absensi</p>
     </body></html>`);
@@ -605,17 +607,17 @@ function printQR() {
     setTimeout(() => { w.print(); w.close(); }, 300);
 }
 
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TAB: LAPORAN
-// ═════════════════════════════════════════════════
-// ═════════════════════════════════════════════════
-// TAB: LAPORAN — step-by-step filter
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// TAB: LAPORAN â€” step-by-step filter
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 // State laporan
 let laporanState = { sesiId: null, fakultasId: null, fakultasNama: null, prodiId: null, prodiNama: null };
 
-// Sesi dipilih → tampilkan daftar fakultas
+// Sesi dipilih â†’ tampilkan daftar fakultas
 async function onLaporanSesiChange() {
     const sid = document.getElementById('laporanSesi').value;
 
@@ -630,7 +632,7 @@ async function onLaporanSesiChange() {
 
     if (!sid) return;
 
-    // Ambil semua mahasiswa aktif → kumpulkan daftar fakultas unik
+    // Ambil semua mahasiswa aktif â†’ kumpulkan daftar fakultas unik
     const chips = allFaculties.map(f => `
         <button class="chip" onclick="onLaporanFakultasClick('${f.id}','${f.nama.replace(/'/g,"\\'")}')">
             ${f.nama}
@@ -641,7 +643,7 @@ async function onLaporanSesiChange() {
     document.getElementById('stepFakultas').style.display = 'block';
 }
 
-// Fakultas dipilih → tampilkan daftar prodi
+// Fakultas dipilih â†’ tampilkan daftar prodi
 function onLaporanFakultasClick(fid, fnama) {
     laporanState.fakultasId   = fid;
     laporanState.fakultasNama = fnama;
@@ -679,7 +681,7 @@ function onLaporanFakultasClick(fid, fnama) {
     document.getElementById('stepDownload').style.display = 'none';
 }
 
-// Prodi dipilih → tampilkan tombol download
+// Prodi dipilih â†’ tampilkan tombol download
 function onLaporanProdiClick(pid, pnama) {
     laporanState.prodiId   = pid;
     laporanState.prodiNama = pnama;
@@ -736,7 +738,7 @@ async function exportToExcel() {
     if (!sid) { alert('Pilih sesi terlebih dahulu'); return; }
 
     const btn = document.getElementById('btnExcelBtn');
-    btn.disabled = true; btn.textContent = 'Mengunduh…';
+    btn.disabled = true; btn.textContent = 'Mengunduhâ€¦';
 
     try {
         const rows = await getExportData(sid);
@@ -774,7 +776,7 @@ async function exportToCSV() {
     if (!sid) { alert('Pilih sesi terlebih dahulu'); return; }
 
     const btn = document.getElementById('btnCsvBtn');
-    btn.disabled = true; btn.textContent = 'Mengunduh…';
+    btn.disabled = true; btn.textContent = 'Mengunduhâ€¦';
 
     try {
         const rows = await getExportData(sid);
@@ -801,9 +803,9 @@ async function exportToCSV() {
     finally { btn.disabled = false; btn.textContent = 'Download CSV'; }
 }
 
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // UTILS
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function generateUUID() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
         const r = Math.random()*16|0;
@@ -826,15 +828,15 @@ function today() {
 }
 
 
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // CETAK LEMBAR ABSENSI (FORMAT FORMAL PER PRODI)
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function cetakLembarAbsensi() {
     const sid = laporanState.sesiId;
     if (!sid) { alert('Pilih sesi terlebih dahulu'); return; }
 
     const btn = document.getElementById('btnPdfBtn');
-    btn.disabled = true; btn.textContent = 'Memuat…';
+    btn.disabled = true; btn.textContent = 'Memuatâ€¦';
 
     try {
         const session = allSessions.find(s => s.id === sid);
@@ -996,9 +998,9 @@ async function cetakLembarAbsensi() {
 }
 
 
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TOGGLE SERTIFIKAT
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 let sertifikatAktif = false;
 
@@ -1023,11 +1025,11 @@ function renderToggleSertif() {
     if (sertifikatAktif) {
         btn.textContent    = 'Nonaktifkan Sertifikat';
         btn.className      = 'btn btn-danger';
-        info.innerHTML     = '<span style="color:#10b981;font-weight:600;">● Aktif</span> — Mahasiswa yang memenuhi syarat sudah bisa download sertifikat';
+        info.innerHTML     = '<span style="color:#10b981;font-weight:600;">â— Aktif</span> â€” Mahasiswa yang memenuhi syarat sudah bisa download sertifikat';
     } else {
         btn.textContent    = 'Aktifkan Sertifikat';
         btn.className      = 'btn btn-primary';
-        info.innerHTML     = '<span style="color:#9ca3af;font-weight:600;">● Nonaktif</span> — Sertifikat belum bisa diakses mahasiswa';
+        info.innerHTML     = '<span style="color:#9ca3af;font-weight:600;">â— Nonaktif</span> â€” Sertifikat belum bisa diakses mahasiswa';
     }
 }
 
@@ -1059,9 +1061,9 @@ async function toggleSertifikat() {
 }
 
 
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // RESET PASSWORD MAHASISWA
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 let resetTargetStudent = null;
 
@@ -1116,7 +1118,7 @@ async function simpanResetPassword() {
             throw new Error(data.message || 'Reset password gagal');
         }
 
-        alert(`✅ Password ${resetTargetStudent.nama_lengkap} berhasil direset!`);
+        alert(`âœ… Password ${resetTargetStudent.nama_lengkap} berhasil direset!`);
         closeModal('modalResetPassword');
 
     } catch (err) {
@@ -1129,9 +1131,9 @@ async function simpanResetPassword() {
 }
 
 
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // TANDAI HADIR MANUAL DARI TAB MAHASISWA
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 let tandaiHadirStudentId = null;
 
@@ -1143,7 +1145,7 @@ function bukaModalTandaiHadir(studentId, nim, nama) {
         <div style="color:#6b7280">NIM: ${nim}</div>
     `;
 
-    // Isi dropdown sesi — hanya sesi yang OPEN atau SCHEDULED
+    // Isi dropdown sesi â€” hanya sesi yang OPEN atau SCHEDULED
     const sel = document.getElementById('tandaiHadirSesi');
     sel.innerHTML = '<option value="">-- Pilih Sesi --</option>';
 
@@ -1203,7 +1205,7 @@ async function simpanTandaiHadir() {
             if (error) throw error;
         }
 
-        alert('✅ Mahasiswa berhasil ditandai HADIR!');
+        alert('âœ… Mahasiswa berhasil ditandai HADIR!');
         closeModal('modalTandaiHadir');
         await loadStatistik();
 
@@ -1218,9 +1220,9 @@ async function simpanTandaiHadir() {
 
 
 
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // DETAIL KEHADIRAN MAHASISWA
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 async function lihatDetailMahasiswa(studentId) {
     const s = allStudents.find(x => x.id === studentId);
@@ -1387,9 +1389,9 @@ async function ubahStatusDariDetail(attId, studentId, newStatus, sessionId) {
 }
 
 
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // HAPUS MAHASISWA
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function confirmDeleteStudent() {
     if (!currentStudent) return;
     
@@ -1397,7 +1399,7 @@ async function confirmDeleteStudent() {
         `HAPUS MAHASISWA?\n\n` +
         `Nama: ${currentStudent.nama_lengkap}\n` +
         `NIM: ${currentStudent.nim}\n\n` +
-        `⚠️ PERINGATAN: Data mahasiswa, akun login, dan semua riwayat absensi akan DIHAPUS PERMANEN.\n\n` +
+        `âš ï¸ PERINGATAN: Data mahasiswa, akun login, dan semua riwayat absensi akan DIHAPUS PERMANEN.\n\n` +
         `Tindakan ini TIDAK BISA DIBATALKAN.\n\n` +
         `Ketik OK untuk melanjutkan.`
     );
@@ -1450,9 +1452,9 @@ async function deleteStudent(studentId) {
 }
 
 
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // EDIT MAHASISWA
-// ═════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function bukaModalEditMahasiswa() {
     if (!currentStudent) return;
     
