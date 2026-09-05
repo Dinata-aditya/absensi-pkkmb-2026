@@ -88,28 +88,27 @@ window.addEventListener('click', e => {
 // TAB: STATISTIK
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function loadStatistik() {
-    const [{ count: totalMhs }, { data: sessions }, { data: attendances }] = await Promise.all([
-        supabase.from('students').select('*', { count: 'exact', head: true }).eq('status', 'ACTIVE'),
-        supabase.from('attendance_sessions').select('*').order('hari_ke'),
-        supabase.from('attendances').select('session_id, status').range(0, 9999)
-    ]);
+    // Use server-side RPC to count — avoids PostgREST 1000-row hard cap
+    const { data: stats, error } = await supabase.rpc('get_attendance_stats');
+    if (error) { console.error('loadStatistik error:', error); return; }
 
-    const sessions_ = sessions || [];
-    const att_      = attendances || [];
-    const hadir     = att_.filter(a => a.status === 'HADIR').length;
-    const alpha     = att_.filter(a => a.status === 'ALPHA').length;
-    const rataRata  = sessions_.length && totalMhs
-        ? ((hadir / (totalMhs * sessions_.length)) * 100).toFixed(1)
+    const totalMhs  = stats.total_mahasiswa ?? 0;
+    const hadir     = stats.total_hadir     ?? 0;
+    const alpha     = stats.total_alpha     ?? 0;
+    const sessions_ = stats.per_sesi        ?? [];
+    const totalSesi = stats.total_sesi      ?? 0;
+    const rataRata  = totalSesi && totalMhs
+        ? ((hadir / (totalMhs * totalSesi)) * 100).toFixed(1)
         : 0;
 
     document.getElementById('statOverall').innerHTML = `
         <div class="summary-card">
             <div class="label">Total Mahasiswa</div>
-            <div class="value">${totalMhs ?? 0}</div>
+            <div class="value">${totalMhs}</div>
         </div>
         <div class="summary-card">
             <div class="label">Total Sesi</div>
-            <div class="value">${sessions_.length}</div>
+            <div class="value">${totalSesi}</div>
         </div>
         <div class="summary-card green">
             <div class="label">Total Hadir</div>
@@ -125,7 +124,7 @@ async function loadStatistik() {
         </div>
     `;
 
-    // Per hari
+    // Per hari — group sessions by hari_ke
     const byDay = {};
     sessions_.forEach(s => {
         if (!byDay[s.hari_ke]) byDay[s.hari_ke] = [];
@@ -134,10 +133,8 @@ async function loadStatistik() {
 
     let html = '';
     Object.entries(byDay).sort((a,b) => a[0]-b[0]).forEach(([hari, sess]) => {
-        const ids = sess.map(s => s.id);
-        const dayAtt   = att_.filter(a => ids.includes(a.session_id));
-        const dayHadir = dayAtt.filter(a => a.status === 'HADIR').length;
-        const dayAlpha = dayAtt.filter(a => a.status === 'ALPHA').length;
+        const dayHadir = sess.reduce((sum, s) => sum + (s.hadir || 0), 0);
+        const dayAlpha = sess.reduce((sum, s) => sum + (s.alpha || 0), 0);
         const pct      = totalMhs ? ((dayHadir / totalMhs) * 100).toFixed(1) : 0;
 
         html += `
