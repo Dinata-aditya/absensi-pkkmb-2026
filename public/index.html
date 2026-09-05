@@ -112,23 +112,39 @@
         </div>
     </div>
 
-    <!-- Supabase -->
+    <!-- Supabase Loader (MUST be first) -->
+    <script src="js/supabase-loader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config.js"></script>
     <script>
         (async function () {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                const { data: roleData } = await supabase
-                    .from('user_roles')
-                    .select('role')
-                    .eq('user_id', session.user.id)
-                    .single();
-                if (roleData) {
-                    window.location.href = roleData.role === 'ADMIN'
-                        ? 'admin-dashboard.html'
-                        : 'mahasiswa-dashboard.html';
+            // Wait for supabase client to be ready
+            await new Promise((resolve) => {
+                if (window._supabaseReady) { resolve(); return; }
+                const t = setInterval(() => {
+                    if (window._supabaseReady || window._supabaseLoadFailed) {
+                        clearInterval(t); resolve();
+                    }
+                }, 100);
+            });
+            if (window._supabaseLoadFailed) return;
+
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    const { data: roleData } = await supabase
+                        .from('user_roles')
+                        .select('role')
+                        .eq('user_id', session.user.id)
+                        .single();
+                    if (roleData) {
+                        window.location.href = roleData.role === 'ADMIN'
+                            ? 'admin-dashboard.html'
+                            : 'mahasiswa-dashboard.html';
+                    }
                 }
+            } catch (e) {
+                console.warn('[index] session check failed:', e.message);
             }
         })();
     </script>
