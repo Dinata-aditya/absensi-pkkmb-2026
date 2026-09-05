@@ -42,13 +42,16 @@ async function loadProdi() {
 }
 
 async function loadStudents() {
-    const { data, error } = await supabase
-        .from('students')
-        .select('*, faculties:fakultas_id(id,nama), study_programs:prodi_id(id,nama)')
-        .order('nama_lengkap')
-        .range(0, 4999);
-    if (error) return error;
-    allStudents = data || [];
+    // Use RPC to bypass PostgREST 1000-row hard cap
+    const { data, error } = await supabase.rpc('get_all_students');
+    if (error) { console.error('loadStudents error:', error); return; }
+
+    // Map RPC flat result to same shape as before (nested faculties/study_programs)
+    allStudents = (data || []).map(s => ({
+        ...s,
+        faculties:      { id: s.fakultas_id, nama: s.fakultas_nama },
+        study_programs: { id: s.prodi_id,    nama: s.prodi_nama    }
+    }));
     filteredStudents = [...allStudents];
     renderMahasiswaTable();
 }
@@ -279,14 +282,15 @@ async function loadAbsensiPerProdi() {
 
     if (error) { container.innerHTML = `<div class="empty">Error: ${error.message}</div>`; return; }
 
-    // Get all active students
-    const { data: allMhs } = await supabase
-        .from('students')
-        .select('id, nim, nama_lengkap, faculties:fakultas_id(nama), study_programs:prodi_id(id,nama)')
-        .eq('status', 'ACTIVE')
-        .order('nama_lengkap')
-        .range(0, 4999);
-
+    // Get all active students via RPC (bypass PostgREST 1000-row cap)
+    const { data: allMhsRaw } = await supabase.rpc('get_all_students');
+    const allMhs = (allMhsRaw || [])
+        .filter(s => s.status === 'ACTIVE')
+        .map(s => ({
+            ...s,
+            faculties:      { nama: s.fakultas_nama },
+            study_programs: { id: s.prodi_id, nama: s.prodi_nama }
+        }));
     const mhsList = allMhs || [];
     const attList = atts   || [];
 
@@ -844,25 +848,26 @@ async function cetakLembarAbsensi() {
         const session = allSessions.find(s => s.id === sid);
         if (!session) throw new Error('Sesi tidak ditemukan');
 
-        // Ambil semua mahasiswa aktif
-        let mhsQuery = supabase
-            .from('students')
-            .select('id, nim, nama_lengkap, fakultas_id, prodi_id, faculties:fakultas_id(nama), study_programs:prodi_id(id, nama)')
-            .eq('status', 'ACTIVE')
-            .order('nama_lengkap');
+        // Ambil semua mahasiswa via RPC (bypass PostgREST 1000-row cap) lalu filter client-side
+        const { data: allMhsRaw, error: mhsErr } = await supabase.rpc('get_all_students');
+        if (mhsErr) throw mhsErr;
+
+        let mhsList = (allMhsRaw || [])
+            .filter(s => s.status === 'ACTIVE')
+            .map(s => ({
+                ...s,
+                faculties:      { nama: s.fakultas_nama },
+                study_programs: { id: s.prodi_id, nama: s.prodi_nama }
+            }));
 
         // Filter by fakultas
         if (laporanState.fakultasId) {
-            mhsQuery = mhsQuery.eq('fakultas_id', laporanState.fakultasId);
+            mhsList = mhsList.filter(s => s.fakultas_id === laporanState.fakultasId);
         }
-
         // Filter by prodi
         if (laporanState.prodiId && laporanState.prodiId !== 'all') {
-            mhsQuery = mhsQuery.eq('prodi_id', laporanState.prodiId);
+            mhsList = mhsList.filter(s => s.prodi_id === laporanState.prodiId);
         }
-
-        const { data: mhsList, error: mhsErr } = await mhsQuery;
-        if (mhsErr) throw mhsErr;
 
         // Ambil data absensi sesi ini
         const { data: atts, error: attErr } = await supabase
