@@ -1033,11 +1033,11 @@ function renderToggleSertif() {
     if (sertifikatAktif) {
         btn.textContent    = 'Nonaktifkan Sertifikat';
         btn.className      = 'btn btn-danger';
-        info.innerHTML     = '<span style="color:#10b981;font-weight:600;">â— Aktif</span> â€” Mahasiswa yang memenuhi syarat sudah bisa download sertifikat';
+        info.innerHTML     = '<span style="color:#10b981;font-weight:600;">&#9679; Aktif</span> &ndash; Mahasiswa yang memenuhi syarat sudah bisa download sertifikat';
     } else {
         btn.textContent    = 'Aktifkan Sertifikat';
         btn.className      = 'btn btn-primary';
-        info.innerHTML     = '<span style="color:#9ca3af;font-weight:600;">â— Nonaktif</span> â€” Sertifikat belum bisa diakses mahasiswa';
+        info.innerHTML     = '<span style="color:#9ca3af;font-weight:600;">&#9679; Nonaktif</span> &ndash; Sertifikat belum bisa diakses mahasiswa';
     }
 }
 
