@@ -11,6 +11,8 @@ const SUPABASE_CONFIG = {
 function initializeSupabaseClient() {
     if (typeof window.supabase === 'undefined' || typeof window.supabase.createClient !== 'function') {
         console.error('? Supabase library not available');
+        window.supabaseClientReady = false;
+        window.dispatchEvent(new Event('supabase-client:error'));
         return false;
     }
     
@@ -22,10 +24,17 @@ function initializeSupabaseClient() {
         
         console.log('? Supabase client initialized successfully');
         console.log('  Project URL:', SUPABASE_CONFIG.url);
+        
+        // Mark as ready and fire event
+        window.supabaseClientReady = true;
+        window.dispatchEvent(new Event('supabase-client:ready'));
+        
         return true;
         
     } catch (error) {
         console.error('? Failed to initialize Supabase client:', error);
+        window.supabaseClientReady = false;
+        window.dispatchEvent(new Event('supabase-client:error'));
         return false;
     }
 }
@@ -43,6 +52,8 @@ if (window.supabaseReady) {
     // Handle error case
     window.addEventListener('supabase:error', function() {
         console.error('? Supabase library failed to load');
+        window.supabaseClientReady = false;
+        window.dispatchEvent(new Event('supabase-client:error'));
     });
 }
 

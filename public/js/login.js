@@ -1,13 +1,27 @@
 // Login Page Logic
 
-// Check if already logged in
-(async function() {
+/**
+ * Initialize login page after Supabase client is ready
+ */
+async function initLoginPage() {
+    // Check if already logged in
     const session = await checkAuth();
     if (session) {
         const role = await getUserRole(session.user.id);
         if (role) redirectBasedOnRole(role);
     }
-})();
+}
+
+// Wait for Supabase client to be ready before checking auth
+if (window.supabaseClientReady) {
+    // Already ready
+    initLoginPage();
+} else {
+    // Wait for ready event
+    window.addEventListener('supabase-client:ready', function() {
+        initLoginPage();
+    });
+}
 
 // Handle form submission
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
@@ -48,7 +62,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             // Admin login langsung pakai email
             email = nimOrEmail;
         } else {
-            // Mahasiswa — cari email berdasarkan NIM (pakai fungsi khusus login)
+            // Mahasiswa � cari email berdasarkan NIM (pakai fungsi khusus login)
             const { data: emailData, error: nimError } = await supabase
                 .rpc('get_email_for_login', { p_nim: nimOrEmail });
 
@@ -127,4 +141,4 @@ function showAlert(message, type = 'info') {
     alertContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-console.log('✓ Login page loaded');
+console.log('? Login page loaded');
