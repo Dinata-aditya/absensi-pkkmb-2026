@@ -88,18 +88,19 @@ window.addEventListener('click', e => {
 // TAB: STATISTIK
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 async function loadStatistik() {
-    // Use server-side RPC to count — avoids PostgREST 1000-row hard cap
+    // Server-side RPC: no PostgREST row cap
     const { data: stats, error } = await supabase.rpc('get_attendance_stats');
     if (error) { console.error('loadStatistik error:', error); return; }
 
     const totalMhs  = stats.total_mahasiswa ?? 0;
+    const totalSesi = stats.total_sesi      ?? 0;
     const hadir     = stats.total_hadir     ?? 0;
     const alpha     = stats.total_alpha     ?? 0;
+    const unikHadir = stats.unik_hadir      ?? 0;  // unique students who attended at least once
     const sessions_ = stats.per_sesi        ?? [];
-    const totalSesi = stats.total_sesi      ?? 0;
-    const rataRata  = totalSesi && totalMhs
-        ? ((hadir / (totalMhs * totalSesi)) * 100).toFixed(1)
-        : 0;
+
+    // Rata-rata = mahasiswa unik yang hadir minimal 1 sesi / total mahasiswa
+    const rataRata = totalMhs ? ((unikHadir / totalMhs) * 100).toFixed(1) : 0;
 
     document.getElementById('statOverall').innerHTML = `
         <div class="summary-card">
@@ -124,7 +125,7 @@ async function loadStatistik() {
         </div>
     `;
 
-    // Per hari — group sessions by hari_ke
+    // Per hari — group sessions by hari_ke, show each session separately
     const byDay = {};
     sessions_.forEach(s => {
         if (!byDay[s.hari_ke]) byDay[s.hari_ke] = [];
@@ -133,19 +134,23 @@ async function loadStatistik() {
 
     let html = '';
     Object.entries(byDay).sort((a,b) => a[0]-b[0]).forEach(([hari, sess]) => {
-        const dayHadir = sess.reduce((sum, s) => sum + (s.hadir || 0), 0);
-        const dayAlpha = sess.reduce((sum, s) => sum + (s.alpha || 0), 0);
-        const pct      = totalMhs ? ((dayHadir / totalMhs) * 100).toFixed(1) : 0;
+        const sesiRows = sess.map(s => {
+            const pct = totalMhs ? ((s.hadir / totalMhs) * 100).toFixed(1) : 0;
+            return `
+            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:.75rem 1rem;margin-bottom:.5rem;">
+                <div style="font-weight:600;font-size:.875rem;color:#374151;margin-bottom:.5rem;">${s.nama_kegiatan}</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:.5rem;font-size:.875rem;">
+                    <div><div style="color:#6b7280">Hadir</div><div style="font-size:1.25rem;font-weight:700;color:#10b981">${s.hadir}</div></div>
+                    <div><div style="color:#6b7280">Alpha</div><div style="font-size:1.25rem;font-weight:700;color:#ef4444">${s.alpha}</div></div>
+                    <div><div style="color:#6b7280">Kehadiran</div><div style="font-size:1.25rem;font-weight:700;color:#111">${pct}%</div></div>
+                </div>
+            </div>`;
+        }).join('');
 
         html += `
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:1rem 1.25rem;margin-bottom:.75rem;">
-            <div style="font-weight:600;margin-bottom:.75rem;color:#111;">Hari Ke-${hari}</div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.75rem;font-size:.875rem;">
-                <div><div style="color:#6b7280">Hadir</div><div style="font-size:1.5rem;font-weight:700;color:#10b981">${dayHadir}</div></div>
-                <div><div style="color:#6b7280">Alpha</div><div style="font-size:1.5rem;font-weight:700;color:#ef4444">${dayAlpha}</div></div>
-                <div><div style="color:#6b7280">Kehadiran</div><div style="font-size:1.5rem;font-weight:700;color:#111">${pct}%</div></div>
-                <div><div style="color:#6b7280">Sesi</div><div style="font-size:.875rem;color:#374151;margin-top:.25rem">${sess.map(s=>s.nama_kegiatan).join(', ')}</div></div>
-            </div>
+            <div style="font-weight:700;margin-bottom:.75rem;color:#111;font-size:1rem;">Hari Ke-${hari}</div>
+            ${sesiRows}
         </div>`;
     });
 
